@@ -1,5 +1,6 @@
 package id.my.f1zz.whenyah.domain.settings
 
+import id.my.f1zz.whenyah.domain.i18n.AppLanguage
 import java.time.LocalTime
 
 enum class ThemeMode {
@@ -23,6 +24,7 @@ enum class SummaryCadence {
 }
 
 data class AppSettings(
+    val language: AppLanguage = AppLanguage.ENGLISH,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val accentColor: AccentColor = AccentColor.DEFAULT,
     val useDynamicColor: Boolean = true,

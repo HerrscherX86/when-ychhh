@@ -40,6 +40,7 @@ import id.my.f1zz.whenyah.data.local.entity.CollectionEntity
 import id.my.f1zz.whenyah.ui.components.CollectionNameDialog
 import id.my.f1zz.whenyah.ui.components.ConfirmDeleteDialog
 import id.my.f1zz.whenyah.ui.components.EmptyState
+import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
 import java.util.UUID
 
 @Composable
@@ -49,6 +50,7 @@ fun CollectionsScreen(
     viewModel: CollectionsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val strings = LocalAppStrings.current
     var showCreateDialog by rememberSaveable { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<CollectionEntity?>(null) }
     var deleteTarget by remember { mutableStateOf<CollectionEntity?>(null) }
@@ -64,8 +66,8 @@ fun CollectionsScreen(
             state.collections.isEmpty() -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     EmptyState(
-                        title = "No collections yet",
-                        message = "Create a collection to group your wishlist items.",
+                        title = strings.noCollectionsYet,
+                        message = strings.noCollectionsMessage,
                     )
                 }
             }
@@ -102,9 +104,8 @@ fun CollectionsScreen(
                                         text = summary.collection.name,
                                         style = MaterialTheme.typography.titleMedium,
                                     )
-                                    val count = summary.itemCount
                                     Text(
-                                        text = "$count item${if (count == 1) "" else "s"}",
+                                        text = strings.itemCount(summary.itemCount),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
@@ -112,13 +113,13 @@ fun CollectionsScreen(
                                 IconButton(onClick = { renameTarget = summary.collection }) {
                                     Icon(
                                         imageVector = Icons.Outlined.Edit,
-                                        contentDescription = "Rename collection",
+                                        contentDescription = strings.renameCollection,
                                     )
                                 }
                                 IconButton(onClick = { deleteTarget = summary.collection }) {
                                     Icon(
                                         imageVector = Icons.Outlined.Delete,
-                                        contentDescription = "Delete collection",
+                                        contentDescription = strings.deleteCollection,
                                     )
                                 }
                             }
@@ -134,15 +135,15 @@ fun CollectionsScreen(
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
         ) {
-            Icon(imageVector = Icons.Filled.Add, contentDescription = "Add collection")
+            Icon(imageVector = Icons.Filled.Add, contentDescription = strings.addCollectionDescription)
         }
     }
 
     if (showCreateDialog) {
         CollectionNameDialog(
-            title = "New collection",
+            title = strings.newCollection,
             initialName = "",
-            confirmLabel = "Create",
+            confirmLabel = strings.create,
             onDismiss = { showCreateDialog = false },
             onConfirm = { name ->
                 viewModel.createCollection(name)
@@ -153,9 +154,9 @@ fun CollectionsScreen(
 
     renameTarget?.let { collection ->
         CollectionNameDialog(
-            title = "Rename collection",
+            title = strings.renameCollection,
             initialName = collection.name,
-            confirmLabel = "Save",
+            confirmLabel = strings.save,
             onDismiss = { renameTarget = null },
             onConfirm = { name ->
                 viewModel.renameCollection(collection.id, name)
@@ -166,8 +167,8 @@ fun CollectionsScreen(
 
     deleteTarget?.let { collection ->
         ConfirmDeleteDialog(
-            title = "Delete collection?",
-            message = "Items in \"${collection.name}\" will be kept and unassigned from it.",
+            title = strings.deleteCollectionTitle,
+            message = strings.deleteCollectionMessage(collection.name),
             onConfirm = {
                 viewModel.deleteCollection(collection.id)
                 deleteTarget = null

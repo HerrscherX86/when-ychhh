@@ -11,6 +11,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
 import id.my.f1zz.whenyah.ui.util.formatIdr
 
 @Composable
@@ -23,11 +24,12 @@ fun MarkPurchasedDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val strings = LocalAppStrings.current
     AlertDialog(
         onDismissRequest = {
             if (!isPurchasing) onDismiss()
         },
-        title = { Text("Mark purchased?") },
+        title = { Text(strings.markPurchasedTitle) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
@@ -35,20 +37,18 @@ fun MarkPurchasedDialog(
                     style = MaterialTheme.typography.titleSmall,
                 )
                 Text(
-                    text = "Target: ${formatIdr(targetPriceIdr)}",
+                    text = strings.targetLabel(formatIdr(targetPriceIdr)),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    text = "Saved: ${formatIdr(savedIdr)}",
+                    text = strings.savedLabel(formatIdr(savedIdr)),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
                     text = if (savedIdr > 0) {
-                        "This records a purchase spend of ${formatIdr(savedIdr)} and moves the " +
-                            "item to the archive. It does not process a real payment."
+                        strings.purchaseSpendInfo(formatIdr(savedIdr))
                     } else {
-                        "No savings are recorded, so the item will be archived without a spend " +
-                            "event. It does not process a real payment."
+                        strings.purchaseNoSavingsInfo
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -73,7 +73,7 @@ fun MarkPurchasedDialog(
                         strokeWidth = 2.dp,
                     )
                 } else {
-                    Text("Mark purchased")
+                    Text(strings.markPurchasedConfirm)
                 }
             }
         },
@@ -82,7 +82,7 @@ fun MarkPurchasedDialog(
                 onClick = onDismiss,
                 enabled = !isPurchasing,
             ) {
-                Text("Cancel")
+                Text(strings.cancel)
             }
         },
     )

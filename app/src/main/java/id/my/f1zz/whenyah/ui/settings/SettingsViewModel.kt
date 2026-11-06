@@ -3,8 +3,11 @@ package id.my.f1zz.whenyah.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import id.my.f1zz.whenyah.data.notification.NotificationService
 import id.my.f1zz.whenyah.data.notification.ReminderCoordinator
 import id.my.f1zz.whenyah.data.settings.SettingsRepository
+import id.my.f1zz.whenyah.domain.i18n.AppLanguage
+import id.my.f1zz.whenyah.domain.i18n.LanguageStore
 import id.my.f1zz.whenyah.domain.settings.AccentColor
 import id.my.f1zz.whenyah.domain.settings.AppSettings
 import id.my.f1zz.whenyah.domain.settings.SummaryCadence
@@ -20,12 +23,22 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val reminderCoordinator: ReminderCoordinator,
+    private val notificationService: NotificationService,
+    private val languageStore: LanguageStore,
 ) : ViewModel() {
     val settings: StateFlow<AppSettings> = settingsRepository.settings.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = AppSettings(),
     )
+
+    fun setLanguage(value: AppLanguage) {
+        viewModelScope.launch {
+            settingsRepository.setLanguage(value)
+            languageStore.update(value)
+            notificationService.ensureChannels()
+        }
+    }
 
     fun setThemeMode(value: ThemeMode) {
         viewModelScope.launch { settingsRepository.setThemeMode(value) }

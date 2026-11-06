@@ -15,6 +15,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import id.my.f1zz.whenyah.MainActivity
 import id.my.f1zz.whenyah.R
 import id.my.f1zz.whenyah.domain.format.formatIdr
+import id.my.f1zz.whenyah.domain.i18n.LanguageStore
 import id.my.f1zz.whenyah.domain.model.PlanFrequency
 import java.util.UUID
 import javax.inject.Inject
@@ -23,35 +24,37 @@ import javax.inject.Singleton
 @Singleton
 class NotificationService @Inject constructor(
     @param:ApplicationContext private val context: Context,
+    private val languageStore: LanguageStore,
 ) {
     fun ensureChannels() {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
+        val strings = languageStore.strings()
 
         manager.createNotificationChannel(
             NotificationChannel(
                 CHANNEL_REMINDERS,
-                "Contribution reminders",
+                strings.notificationChannelReminders,
                 NotificationManager.IMPORTANCE_DEFAULT,
             ).apply {
-                description = "Reminders for savings-plan contributions"
+                description = strings.notificationChannelRemindersDescription
             }
         )
         manager.createNotificationChannel(
             NotificationChannel(
                 CHANNEL_GOALS,
-                "Goal reached",
+                strings.notificationChannelGoals,
                 NotificationManager.IMPORTANCE_DEFAULT,
             ).apply {
-                description = "Notifications when an item reaches its savings goal"
+                description = strings.notificationChannelGoalsDescription
             }
         )
         manager.createNotificationChannel(
             NotificationChannel(
                 CHANNEL_SUMMARIES,
-                "Progress summaries",
+                strings.notificationChannelSummaries,
                 NotificationManager.IMPORTANCE_LOW,
             ).apply {
-                description = "Periodic savings progress summaries"
+                description = strings.notificationChannelSummariesDescription
             }
         )
     }
@@ -74,17 +77,15 @@ class NotificationService @Inject constructor(
         contributionIdr: Long,
         frequency: PlanFrequency,
     ) {
-        val cadence = when (frequency) {
-            PlanFrequency.DAILY -> "daily"
-            PlanFrequency.WEEKLY -> "weekly"
-            PlanFrequency.MONTHLY -> "monthly"
-        }
+        val strings = languageStore.strings()
         post(
             channelId = CHANNEL_REMINDERS,
             notificationId = planId.hashCode(),
-            title = "Time to save for $itemName",
-            message = "${formatIdr(contributionIdr)} $cadence contribution. " +
-                "Planned contributions are not deducted automatically.",
+            title = strings.planReminderTitle(itemName),
+            message = strings.planReminderMessage(
+                formatIdr(contributionIdr),
+                frequency,
+            ),
         )
     }
 
@@ -94,11 +95,15 @@ class NotificationService @Inject constructor(
         targetIdr: Long,
         savedIdr: Long,
     ) {
+        val strings = languageStore.strings()
         post(
             channelId = CHANNEL_GOALS,
             notificationId = GOAL_NOTIFICATION_BASE + itemId.hashCode(),
-            title = "Goal reached: $itemName",
-            message = "Saved ${formatIdr(savedIdr)} of ${formatIdr(targetIdr)}.",
+            title = strings.goalNotificationTitle(itemName),
+            message = strings.goalNotificationMessage(
+                formatIdr(savedIdr),
+                formatIdr(targetIdr),
+            ),
         )
     }
 
@@ -107,12 +112,16 @@ class NotificationService @Inject constructor(
         totalSavedIdr: Long,
         fullyFundedCount: Int,
     ) {
+        val strings = languageStore.strings()
         post(
             channelId = CHANNEL_SUMMARIES,
             notificationId = SUMMARY_NOTIFICATION_ID,
-            title = "Savings progress",
-            message = "$activeItemCount active item${if (activeItemCount == 1) "" else "s"} • " +
-                "${formatIdr(totalSavedIdr)} saved • $fullyFundedCount funded",
+            title = strings.summaryNotificationTitle,
+            message = strings.summaryNotificationMessage(
+                activeItemCount,
+                formatIdr(totalSavedIdr),
+                fullyFundedCount,
+            ),
         )
     }
 

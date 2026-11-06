@@ -103,6 +103,7 @@ data class BackupPurchaseRecord(
 
 @Serializable
 data class BackupSettings(
+    val language: String = "ENGLISH",
     val themeMode: String,
     val accentColor: String,
     val useDynamicColor: Boolean,

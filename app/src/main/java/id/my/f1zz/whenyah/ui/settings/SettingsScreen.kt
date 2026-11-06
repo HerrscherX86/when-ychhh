@@ -40,9 +40,11 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import id.my.f1zz.whenyah.domain.i18n.AppLanguage
 import id.my.f1zz.whenyah.domain.settings.AccentColor
 import id.my.f1zz.whenyah.domain.settings.SummaryCadence
 import id.my.f1zz.whenyah.domain.settings.ThemeMode
+import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
 import id.my.f1zz.whenyah.ui.util.formatTime
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -57,6 +59,7 @@ fun SettingsScreen(
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val backupState by backupViewModel.uiState.collectAsStateWithLifecycle()
+    val strings = LocalAppStrings.current
     val context = LocalContext.current
     var permissionDenied by rememberSaveable { mutableStateOf(false) }
     var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
@@ -111,9 +114,9 @@ fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            SettingsCard(title = "Appearance") {
+            SettingsCard(title = strings.appearance) {
                 Text(
-                    text = "Theme",
+                    text = strings.theme,
                     style = MaterialTheme.typography.labelLarge,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -124,9 +127,9 @@ fun SettingsScreen(
                             label = {
                                 Text(
                                     when (mode) {
-                                        ThemeMode.SYSTEM -> "System"
-                                        ThemeMode.LIGHT -> "Light"
-                                        ThemeMode.DARK -> "Dark"
+                                        ThemeMode.SYSTEM -> strings.system
+                                        ThemeMode.LIGHT -> strings.light
+                                        ThemeMode.DARK -> strings.dark
                                     }
                                 )
                             },
@@ -135,14 +138,14 @@ fun SettingsScreen(
                 }
 
                 SettingSwitchRow(
-                    title = "Dynamic color",
-                    supportingText = "Use the device wallpaper palette when available.",
+                    title = strings.dynamicColor,
+                    supportingText = strings.dynamicColorHelp,
                     checked = settings.useDynamicColor,
                     onCheckedChange = viewModel::setUseDynamicColor,
                 )
 
                 Text(
-                    text = "Accent color",
+                    text = strings.accentColor,
                     style = MaterialTheme.typography.labelLarge,
                 )
                 Row(
@@ -159,11 +162,11 @@ fun SettingsScreen(
                             label = {
                                 Text(
                                     when (accent) {
-                                        AccentColor.DEFAULT -> "Default"
-                                        AccentColor.BLUE -> "Blue"
-                                        AccentColor.GREEN -> "Green"
-                                        AccentColor.AMBER -> "Amber"
-                                        AccentColor.ROSE -> "Rose"
+                                        AccentColor.DEFAULT -> strings.accentDefault
+                                        AccentColor.BLUE -> strings.accentBlue
+                                        AccentColor.GREEN -> strings.accentGreen
+                                        AccentColor.AMBER -> strings.accentAmber
+                                        AccentColor.ROSE -> strings.accentRose
                                     }
                                 )
                             },
@@ -172,7 +175,7 @@ fun SettingsScreen(
                 }
                 if (settings.useDynamicColor) {
                     Text(
-                        text = "Turn off dynamic color to use a custom accent.",
+                        text = strings.accentHelp,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -181,34 +184,56 @@ fun SettingsScreen(
         }
 
         item {
-            SettingsCard(title = "Notifications") {
+            SettingsCard(title = strings.language) {
+                Text(
+                    text = strings.languageHelp,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = settings.language == AppLanguage.ENGLISH,
+                        onClick = { viewModel.setLanguage(AppLanguage.ENGLISH) },
+                        label = { Text(strings.languageEnglish) },
+                    )
+                    FilterChip(
+                        selected = settings.language == AppLanguage.INDONESIAN,
+                        onClick = { viewModel.setLanguage(AppLanguage.INDONESIAN) },
+                        label = { Text(strings.languageIndonesian) },
+                    )
+                }
+            }
+        }
+
+        item {
+            SettingsCard(title = strings.notifications) {
                 SettingSwitchRow(
-                    title = "Enable notifications",
+                    title = strings.enableNotifications,
                     supportingText = if (permissionDenied) {
-                        "Permission denied. Enable notification permission in system settings."
+                        strings.permissionDenied
                     } else {
-                        "Reminders and summaries are best-effort and may be delayed by Android."
+                        strings.notificationBestEffort
                     },
                     checked = settings.notificationsEnabled,
                     onCheckedChange = ::onNotificationsToggle,
                 )
 
                 SettingSwitchRow(
-                    title = "Goal reached",
-                    supportingText = "Notify when an actual deposit reaches an item's target.",
+                    title = strings.goalNotifications,
+                    supportingText = strings.goalNotificationsHelp,
                     checked = settings.goalNotificationsEnabled,
                     enabled = settings.notificationsEnabled,
                     onCheckedChange = viewModel::setGoalNotificationsEnabled,
                 )
 
                 Text(
-                    text = "Contribution reminders are configured per plan in the savings-plan editor.",
+                    text = strings.contributionReminderHelp,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 Text(
-                    text = "Progress summary",
+                    text = strings.progressSummary,
                     style = MaterialTheme.typography.labelLarge,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -220,9 +245,9 @@ fun SettingsScreen(
                             label = {
                                 Text(
                                     when (cadence) {
-                                        SummaryCadence.OFF -> "Off"
-                                        SummaryCadence.WEEKLY -> "Weekly"
-                                        SummaryCadence.MONTHLY -> "Monthly"
+                                        SummaryCadence.OFF -> strings.off
+                                        SummaryCadence.WEEKLY -> strings.weekly
+                                        SummaryCadence.MONTHLY -> strings.monthly
                                     }
                                 )
                             },
@@ -246,19 +271,19 @@ fun SettingsScreen(
                         enabled = settings.notificationsEnabled,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text("Summary time: ${formatTime(settings.summaryTime)}")
+                        Text(strings.summaryTimeLabel(formatTime(settings.summaryTime)))
                     }
                 }
             }
         }
 
         item {
-            SettingsCard(title = "Data") {
+            SettingsCard(title = strings.data) {
                 Button(
                     onClick = onOpenArchive,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Purchased archive")
+                    Text(strings.purchasedArchive)
                 }
 
                 OutlinedButton(
@@ -266,7 +291,7 @@ fun SettingsScreen(
                     enabled = !backupBusy,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text(if (backupState.isExporting) "Exporting…" else "Export backup")
+                    Text(if (backupState.isExporting) strings.exporting else strings.exportBackup)
                 }
 
                 OutlinedButton(
@@ -282,7 +307,7 @@ fun SettingsScreen(
                     enabled = !backupBusy,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text(if (backupState.isRestoring) "Restoring…" else "Restore backup")
+                    Text(if (backupState.isRestoring) strings.restoring else strings.restoreBackup)
                 }
 
                 if (backupBusy) {
@@ -305,7 +330,7 @@ fun SettingsScreen(
                 }
 
                 Text(
-                    text = "Restore replaces all local data. Backups use Android's file picker, so no storage permission is needed.",
+                    text = strings.restoreReplacesData,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -313,13 +338,13 @@ fun SettingsScreen(
         }
 
         item {
-            SettingsCard(title = "About") {
+            SettingsCard(title = strings.about) {
                 Text(
-                    text = "When Yah 1.0",
+                    text = strings.appVersion,
                     style = MaterialTheme.typography.bodyLarge,
                 )
                 Text(
-                    text = "Offline-first wishlist and savings tracker • IDR only",
+                    text = strings.appTagline,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -330,13 +355,8 @@ fun SettingsScreen(
     pendingRestoreUri?.let { uri ->
         AlertDialog(
             onDismissRequest = { pendingRestoreUri = null },
-            title = { Text("Restore backup?") },
-            text = {
-                Text(
-                    "This replaces all items, collections, savings, plans, purchase records, " +
-                        "images, and settings. This cannot be undone. Export a backup first if needed."
-                )
-            },
+            title = { Text(strings.restoreBackupTitle) },
+            text = { Text(strings.restoreBackupMessage) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -344,12 +364,12 @@ fun SettingsScreen(
                         backupViewModel.restore(uri)
                     },
                 ) {
-                    Text("Restore")
+                    Text(strings.restore)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { pendingRestoreUri = null }) {
-                    Text("Cancel")
+                    Text(strings.cancel)
                 }
             },
         )

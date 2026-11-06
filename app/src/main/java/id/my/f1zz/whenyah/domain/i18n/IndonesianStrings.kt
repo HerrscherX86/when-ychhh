@@ -1,0 +1,314 @@
+package id.my.f1zz.whenyah.domain.i18n
+
+import id.my.f1zz.whenyah.domain.model.PlanFrequency
+import java.util.Locale
+
+object IndonesianStrings : AppStrings {
+    override val locale: Locale = Locale.forLanguageTag("in-ID")
+
+    override val appName = "When Yah"
+    override val back = "Balik"
+    override val cancel = "Batal"
+    override val delete = "Hapus"
+    override val save = "Simpan"
+    override val create = "Bikin"
+    override val edit = "Edit"
+    override val remove = "Hapus"
+    override val none = "Gak ada"
+    override val add = "Tambah"
+    override val off = "Mati"
+    override val weekly = "Mingguan"
+    override val monthly = "Bulanan"
+    override val active = "Aktif"
+    override val paused = "Pause"
+    override val goalReached = "Target tercapai"
+    override val fullyFunded = "Udah kekumpul"
+    override val plannedNotPaid = "Rencana, belum dibayar"
+    override val noEstimateAvailable = "Belum ada estimasi"
+    override val dateTooFar = "Tanggalnya kejauhan banget"
+    override val itemNotFound = "Itemnya gak ketemu"
+    override val itemMayBeDeleted = "Mungkin udah dihapus."
+    override val deposit = "Nabung"
+    override val withdrawal = "Tarik"
+    override val spentOnPurchase = "Dipakai buat beli"
+
+    override val navHome = "Home"
+    override val navCollections = "Koleksi"
+    override val navSettings = "Settings"
+    override val titleItemDetails = "Detail item"
+    override val titleTransactionHistory = "Riwayat transaksi"
+    override val titleSavingsPlan = "Rencana nabung"
+    override val titleAddItem = "Tambah item"
+    override val titleEditItem = "Edit item"
+    override val titleCollection = "Koleksi"
+    override val titlePurchasedArchive = "Arsip belanja"
+    override val titleArchivedItem = "Item arsip"
+    override val titleActivity = "Aktivitas"
+
+    override val totalSaved = "Total kekumpul"
+    override val archiveShort = "Arsip"
+    override val overallProgress = "Progress keseluruhan"
+    override val activeItems = "Item aktif"
+    override val totalTarget = "Total target"
+    override val fullyFundedLabel = "Udah kekumpul"
+    override val noActiveItemsYet = "Belum ada item aktif nih"
+    override val noTargetAmountSet = "Targetnya belum diisi"
+    override val allActiveGoalsFunded = "Semua target aktif udah kekumpul"
+    override val recentActivity = "Aktivitas terakhir"
+    override val viewAll = "Lihat semua"
+    override val upcomingPlans = "Rencana mendatang"
+    override val closestGoals = "Paling deket"
+    override val allItems = "Semua item"
+    override val searchItems = "Cari item"
+    override val sortRecent = "Terbaru"
+    override val sortName = "Nama"
+    override val noItemsYet = "Belum ada item"
+    override val noItemsMessage = "Tap + buat nambahin wishlist pertama kamu."
+    override val noMatchingItems = "Gak ada item yang cocok"
+    override val noMatchingMessage = "Coba kata kunci lain, ya."
+    override val addItem = "Tambah item"
+    override val addItemDescription = "Tambah item"
+    override val noActivityYet = "Belum ada aktivitas"
+    override val noActivityMessage = "Nabung atau tarik dari item aktif bakal muncul di sini."
+
+    override val noCollectionsYet = "Belum ada koleksi"
+    override val noCollectionsMessage = "Bikin koleksi buat ngelompokin wishlist kamu."
+    override val collectionNameLabel = "Nama koleksi"
+    override val nameRequired = "Nama wajib diisi"
+    override val renameCollection = "Ganti nama koleksi"
+    override val deleteCollection = "Hapus koleksi"
+    override val addCollectionDescription = "Tambah koleksi"
+    override val newCollection = "Koleksi baru"
+    override val deleteCollectionTitle = "Hapus koleksi?"
+    override val collectionNotFound = "Koleksinya gak ketemu"
+    override val noItemsInCollection = "Belum ada item di koleksi ini"
+    override val noItemsInCollectionMessage = "Tambahin item buat mulai isi koleksi ini."
+
+    override val markPurchased = "Tandai udah dibeli"
+    override val markPurchasedTitle = "Tandai udah dibeli?"
+    override val collectionLabel = "Koleksi"
+    override val categoryLabel = "Kategori"
+    override val addedLabel = "Ditambah"
+    override val updatedLabel = "Diupdate"
+    override val notesLabel = "Catatan"
+    override val openPurchaseLink = "Buka link beli"
+    override val invalidPurchaseLink = "Link belinya gak valid."
+    override val noAppCanOpenLink = "Gak ada app yang bisa buka link ini."
+    override val noSavingsActivityYet = "Belum ada aktivitas nabung."
+    override val deleteItemTitle = "Hapus item?"
+    override val deleteItemMessage = "Item, gambar, dan semua data tabungannya bakal dihapus. Gak bisa dibalikin lagi."
+    override val savings = "Tabungan"
+    override val targetMet = "Target udah pas"
+    override val addSavings = "Nabung"
+    override val withdraw = "Tarik"
+    override val savingsPlan = "Rencana nabung"
+    override val noPlanMessage = "Belum ada rencana. Atur nominal dan jadwal nabung biar dapet estimasi kelarnya."
+    override val setAPlan = "Atur rencana"
+    override val planPaused = "Rencana di-pause"
+    override val resumePlanToEstimate = "Aktifin lagi rencananya buat lihat estimasi kelar."
+    override val editPlan = "Edit rencana"
+    override val addSavingsTitle = "Nabung"
+    override val withdrawSavingsTitle = "Tarik tabungan"
+    override val amountIdr = "Nominal (IDR)"
+    override val noteOptional = "Catatan (opsional)"
+    override val purchaseNoSavingsInfo = "Gak ada tabungan yang dicatat, jadi item langsung masuk arsip tanpa catatan pemakaian. Ini bukan pembayaran beneran, ya."
+    override val markPurchasedConfirm = "Tandai dibeli"
+
+    override val contributionAmountIdr = "Nominal nabung (IDR)"
+    override val frequency = "Frekuensi"
+    override val contributionReminder = "Reminder nabung"
+    override val reminderHelp = "Remindernya best-effort. Butuh izin notifikasi."
+    override val createPlan = "Bikin rencana"
+    override val updatePlan = "Update rencana"
+    override val planStatus = "Status rencana"
+    override val pausePlan = "Pause rencana"
+    override val resumePlan = "Lanjutin rencana"
+    override val deletePlan = "Hapus rencana"
+    override val deletePlanTitle = "Hapus rencana nabung?"
+    override val deletePlanMessage = "Tabungan yang udah dicatat tetap aman. Yang dihapus cuma rencana dan estimasinya."
+    override val projection = "Estimasi"
+    override val enterContributionEstimate = "Isi nominal nabung dulu buat lihat estimasi."
+    override val estimateAssumes = "Estimasi ini nganggep kamu mulai nabung hari ini dan lanjut sesuai jadwal."
+    override val enterValidContribution = "Isi nominal yang valid dan lebih dari nol"
+    override val couldNotSavePlan = "Gagal nyimpen rencananya"
+    override val couldNotUpdatePlan = "Gagal update rencananya"
+    override val couldNotDeletePlan = "Gagal hapus rencananya"
+
+    override val selectedItemImage = "Gambar item yang dipilih"
+    override val chooseImage = "Pilih gambar"
+    override val changeImage = "Ganti gambar"
+    override val nameLabel = "Nama"
+    override val targetPriceIdr = "Harga target (IDR)"
+    override val categoryOptional = "Kategori (opsional)"
+    override val noCollection = "Tanpa koleksi"
+    override val purchaseUrlOptional = "URL beli (opsional)"
+    override val notesOptional = "Catatan (opsional)"
+    override val saveChanges = "Simpan perubahan"
+    override val couldNotLoadImage = "Gagal load gambar yang dipilih"
+    override val enterItemName = "Isi nama itemnya dulu"
+    override val enterValidIdr = "Isi nominal IDR yang valid, angka aja ya"
+    override val enterValidUrl = "Isi URL http(s) yang valid"
+    override val couldNotSaveItem = "Gagal nyimpen itemnya"
+
+    override val allTransactions = "Semua transaksi"
+    override val noTransactionsYet = "Belum ada transaksi"
+    override val noTransactionsMessage = "Nabung atau tarik dari item ini buat mulai bikin riwayat."
+
+    override val noPurchasedItemsYet = "Belum ada item yang dibeli"
+    override val noPurchasedItemsMessage = "Item yang kamu tandai udah dibeli bakal muncul di sini lengkap sama riwayat tabungannya."
+    override val purchaseDateUnavailable = "Tanggal belinya gak tersedia"
+    override val purchaseDetailsUnavailable = "Detail pembeliannya gak tersedia"
+    override val purchaseRecord = "Catatan pembelian"
+    override val purchaseRecordUnavailable = "Catatan pembeliannya gak tersedia."
+    override val savedBeforePurchase = "Kekumpul sebelum beli"
+    override val spentFromSavingsLabel = "Dipakai dari tabungan"
+    override val savingsSpentDisclaimer = "Tabungan yang dipakai itu jumlah yang kamu sisihkan, bukan berarti harga belinya pas segitu."
+    override val transactionHistory = "Riwayat transaksi"
+    override val noLedgerEntries = "Belum ada catatan transaksi."
+    override val restoreToActive = "Balikin ke aktif"
+    override val deletePermanently = "Hapus permanen"
+    override val deleteArchivedItemTitle = "Hapus item arsip?"
+    override val deleteArchivedItemMessage = "Item, gambar, riwayat, rencana, dan catatan pembeliannya bakal dihapus permanen. Gak bisa dibalikin."
+    override val couldNotRestoreItem = "Gagal balikin itemnya"
+    override val couldNotDeleteItem = "Gagal hapus itemnya"
+
+    override val appearance = "Tampilan"
+    override val theme = "Tema"
+    override val system = "Sistem"
+    override val light = "Terang"
+    override val dark = "Gelap"
+    override val dynamicColor = "Warna dinamis"
+    override val dynamicColorHelp = "Pakai warna dari wallpaper device kalau ada."
+    override val accentColor = "Warna aksen"
+    override val accentHelp = "Matiin warna dinamis dulu kalau mau pakai aksen sendiri."
+    override val accentDefault = "Default"
+    override val accentBlue = "Biru"
+    override val accentGreen = "Hijau"
+    override val accentAmber = "Amber"
+    override val accentRose = "Rose"
+    override val notifications = "Notifikasi"
+    override val enableNotifications = "Aktifin notifikasi"
+    override val permissionDenied = "Izinnya ditolak. Aktifin izin notifikasi di Settings HP."
+    override val notificationBestEffort = "Reminder dan ringkasannya best-effort, bisa telat dikit tergantung Android."
+    override val goalNotifications = "Target tercapai"
+    override val goalNotificationsHelp = "Kasih notif kalau deposit beneran bikin item nyampe target."
+    override val contributionReminderHelp = "Reminder nabung diatur per rencana di editor rencana nabung."
+    override val progressSummary = "Ringkasan progress"
+    override val data = "Data"
+    override val purchasedArchive = "Arsip belanja"
+    override val exportBackup = "Export backup"
+    override val exporting = "Lagi export…"
+    override val restoreBackup = "Restore backup"
+    override val restoring = "Lagi restore…"
+    override val restoreReplacesData = "Restore bakal ganti semua data lokal. Backup pakai file picker Android, jadi gak perlu izin storage."
+    override val about = "Tentang"
+    override val appVersion = "When Yah 1.0"
+    override val appTagline = "Wishlist dan tracker tabungan offline • cuma IDR"
+    override val language = "Bahasa"
+    override val languageHelp = "Pilih bahasa yang dipakai di seluruh app."
+    override val languageEnglish = "English"
+    override val languageIndonesian = "Bahasa Indonesia"
+    override val backupExportFailed = "Gagal export backup."
+    override val backupRestoreFailed = "Gagal restore backup."
+    override val restoreBackupTitle = "Restore backup?"
+    override val restoreBackupMessage = "Ini bakal ganti semua item, koleksi, tabungan, rencana, catatan pembelian, gambar, dan settings. Gak bisa dibalikin. Export backup dulu kalau perlu."
+    override val restore = "Restore"
+
+    override val notificationChannelReminders = "Reminder nabung"
+    override val notificationChannelRemindersDescription = "Reminder buat nabung sesuai rencana"
+    override val notificationChannelGoals = "Target tercapai"
+    override val notificationChannelGoalsDescription = "Notif kalau item nyampe target tabungannya"
+    override val notificationChannelSummaries = "Ringkasan progress"
+    override val notificationChannelSummariesDescription = "Ringkasan progress tabungan berkala"
+    override val summaryNotificationTitle = "Progress tabungan"
+
+    override val couldNotRecordTransaction = "Gagal nyatet transaksinya"
+    override val withdrawalExceeds = "Yang mau ditarik lebih gede dari tabungan yang ada"
+    override val enterValidAmount = "Isi nominal yang valid dan lebih dari nol"
+    override val couldNotMarkPurchased = "Gagal nandain itemnya udah dibeli"
+
+    override fun itemCount(count: Int): String = "$count item"
+
+    override fun transactionCount(count: Int): String = "$count transaksi"
+
+    override fun viewAllTransactions(count: Int): String = "Lihat semua $count transaksi"
+
+    override fun targetAndSaved(target: String, saved: String): String =
+        "Target $target • Kekumpul $saved"
+
+    override fun targetLabel(value: String): String = "Target: $value"
+
+    override fun savedLabel(value: String): String = "Kekumpul: $value"
+
+    override fun availableLabel(value: String): String = "Tersedia: $value"
+
+    override fun remainingLabel(value: String): String = "Sisa $value"
+
+    override fun percentageSaved(percent: Int): String = "$percent% kekumpul"
+
+    override fun percentageFunded(percent: Int): String = "$percent% kekumpul"
+
+    override fun contributionCount(count: Long): String = "$count kontribusi rencana"
+
+    override fun estimatedCompletion(date: String): String = "Perkiraan kelar: $date"
+
+    override fun completionDate(date: String): String = "Tanggal kelar: $date"
+
+    override fun purchasedOn(date: String): String = "Dibeli $date"
+
+    override fun spentFromSavings(value: String): String = "Dipakai dari tabungan $value"
+
+    override fun amountLeft(value: String): String = "Sisa $value"
+
+    override fun ofTarget(value: String): String = "dari $value"
+
+    override fun aboveTarget(value: String): String = "$value lebih dari target"
+
+    override fun contributionsEstimate(count: Long, date: String): String =
+        "$count kontribusi · est. $date"
+
+    override fun deleteCollectionMessage(name: String): String =
+        "Item di \"$name\" bakal tetap aman, cuma dilepas dari koleksinya."
+
+    override fun purchaseSpendInfo(amount: String): String =
+        "Ini bakal nyatet pemakaian tabungan sebesar $amount dan mindahin item ke arsip. " +
+            "Ini bukan pembayaran beneran, ya."
+
+    override fun reminderTimeLabel(time: String): String = "Jam reminder: $time"
+
+    override fun completionDateLabel(date: String): String = "Tanggal kelar: $date"
+
+    override fun remainingValue(value: String): String = "Sisa: $value"
+
+    override fun estimatedCompletionLabel(date: String): String = "Perkiraan kelar: $date"
+
+    override fun summaryTimeLabel(time: String): String = "Jam ringkasan: $time"
+
+    override fun backupExported(items: Int, images: Int): String =
+        "Berhasil export $items item dan $images gambar."
+
+    override fun backupRestored(items: Int, images: Int): String =
+        "Berhasil restore $items item dan $images gambar."
+
+    override val backupSettingsFailedSuffix = " Settings-nya gagal dibalikin."
+
+    override fun planReminderTitle(itemName: String): String = "Waktunya nabung buat $itemName"
+
+    override fun planReminderMessage(amount: String, frequency: PlanFrequency): String =
+        "Nabung ${planFrequency(frequency).lowercase()} $amount. " +
+            "Rencana ini gak otomatis motong saldo, ya."
+
+    override fun goalNotificationTitle(itemName: String): String = "Target tercapai: $itemName"
+
+    override fun goalNotificationMessage(saved: String, target: String): String =
+        "Udah kekumpul $saved dari $target."
+
+    override fun summaryNotificationMessage(active: Int, saved: String, funded: Int): String =
+        "$active item aktif • $saved kekumpul • $funded udah target"
+
+    override fun planFrequency(frequency: PlanFrequency): String = when (frequency) {
+        PlanFrequency.DAILY -> "Harian"
+        PlanFrequency.WEEKLY -> "Mingguan"
+        PlanFrequency.MONTHLY -> "Bulanan"
+    }
+}

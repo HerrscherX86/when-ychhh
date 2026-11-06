@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import id.my.f1zz.whenyah.data.backup.BackupManager
+import id.my.f1zz.whenyah.domain.i18n.LanguageStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,6 +23,7 @@ data class BackupUiState(
 @HiltViewModel
 class BackupViewModel @Inject constructor(
     private val backupManager: BackupManager,
+    private val languageStore: LanguageStore,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(BackupUiState())
     val uiState: StateFlow<BackupUiState> = _uiState.asStateFlow()
@@ -33,21 +35,24 @@ class BackupViewModel @Inject constructor(
             it.copy(isExporting = true, message = null, error = null)
         }
         viewModelScope.launch {
+            val strings = languageStore.strings()
             backupManager.exportTo(uri).fold(
                 onSuccess = { result ->
                     _uiState.update {
                         it.copy(
                             isExporting = false,
-                            message = "Exported ${result.itemCount} items and " +
-                                "${result.imageCount} images.",
+                            message = strings.backupExported(
+                                result.itemCount,
+                                result.imageCount,
+                            ),
                         )
                     }
                 },
-                onFailure = { failure ->
+                onFailure = {
                     _uiState.update {
                         it.copy(
                             isExporting = false,
-                            error = failure.message ?: "Could not export the backup.",
+                            error = strings.backupExportFailed,
                         )
                     }
                 },
@@ -62,26 +67,29 @@ class BackupViewModel @Inject constructor(
             it.copy(isRestoring = true, message = null, error = null)
         }
         viewModelScope.launch {
+            val strings = languageStore.strings()
             backupManager.restoreFrom(uri).fold(
                 onSuccess = { result ->
                     val settingsSuffix = if (result.settingsApplied) {
                         ""
                     } else {
-                        " Settings could not be restored."
+                        strings.backupSettingsFailedSuffix
                     }
                     _uiState.update {
                         it.copy(
                             isRestoring = false,
-                            message = "Restored ${result.itemCount} items and " +
-                                "${result.imageCount} images.$settingsSuffix",
+                            message = strings.backupRestored(
+                                result.itemCount,
+                                result.imageCount,
+                            ) + settingsSuffix,
                         )
                     }
                 },
-                onFailure = { failure ->
+                onFailure = {
                     _uiState.update {
                         it.copy(
                             isRestoring = false,
-                            error = failure.message ?: "Could not restore the backup.",
+                            error = strings.backupRestoreFailed,
                         )
                     }
                 },

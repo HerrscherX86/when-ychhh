@@ -5,6 +5,7 @@ import id.my.f1zz.whenyah.data.local.entity.PurchaseRecordEntity
 import id.my.f1zz.whenyah.data.local.entity.SavingsEventEntity
 import id.my.f1zz.whenyah.data.local.entity.SavingsPlanEntity
 import id.my.f1zz.whenyah.data.local.entity.WishlistItemEntity
+import id.my.f1zz.whenyah.domain.i18n.AppLanguage
 import id.my.f1zz.whenyah.domain.model.ItemStatus
 import id.my.f1zz.whenyah.domain.model.PlanFrequency
 import id.my.f1zz.whenyah.domain.model.SavingsEventType
@@ -144,6 +145,7 @@ object BackupValidator {
         requireUnique(plans.map { it.itemId }, "plan itemId")
 
         val settings = AppSettings(
+            language = parseEnum<AppLanguage>(data.settings.language, "language"),
             themeMode = parseEnum<ThemeMode>(data.settings.themeMode, "theme mode"),
             accentColor = parseEnum<AccentColor>(data.settings.accentColor, "accent color"),
             useDynamicColor = data.settings.useDynamicColor,

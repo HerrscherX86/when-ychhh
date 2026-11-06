@@ -49,10 +49,10 @@ import id.my.f1zz.whenyah.ui.components.ItemImage
 import id.my.f1zz.whenyah.ui.components.MarkPurchasedDialog
 import id.my.f1zz.whenyah.ui.components.SavingsEventRow
 import id.my.f1zz.whenyah.ui.components.TransactionDialog
+import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
 import id.my.f1zz.whenyah.ui.util.formatDate
 import id.my.f1zz.whenyah.ui.util.formatDateTime
 import id.my.f1zz.whenyah.ui.util.formatIdr
-import id.my.f1zz.whenyah.ui.util.formatPlanFrequency
 import kotlin.math.roundToInt
 
 @Composable
@@ -66,6 +66,7 @@ fun ItemDetailScreen(
     viewModel: ItemDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val strings = LocalAppStrings.current
     val transactionForm by viewModel.transactionForm.collectAsStateWithLifecycle()
     val purchaseState by viewModel.purchaseState.collectAsStateWithLifecycle()
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
@@ -93,8 +94,8 @@ fun ItemDetailScreen(
         item == null -> {
             Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 EmptyState(
-                    title = "Item not found",
-                    message = "It may have been deleted.",
+                    title = strings.itemNotFound,
+                    message = strings.itemMayBeDeleted,
                 )
             }
         }
@@ -148,29 +149,41 @@ fun ItemDetailScreen(
                     },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Mark purchased")
+                    Text(strings.markPurchased)
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Button(onClick = onEdit, modifier = Modifier.weight(1f)) {
-                        Text("Edit")
+                        Text(strings.edit)
                     }
                     OutlinedButton(
                         onClick = { showDeleteDialog = true },
                         modifier = Modifier.weight(1f),
                     ) {
-                        Text("Delete")
+                        Text(strings.delete)
                     }
                 }
                 HorizontalDivider()
-                DetailRow(label = "Collection", value = state.collectionName ?: "None")
-                DetailRow(label = "Category", value = item.category ?: "None")
-                DetailRow(label = "Added", value = formatDateTime(item.createdAt))
-                DetailRow(label = "Updated", value = formatDateTime(item.updatedAt))
+                DetailRow(
+                    label = strings.collectionLabel,
+                    value = state.collectionName ?: strings.none,
+                )
+                DetailRow(
+                    label = strings.categoryLabel,
+                    value = item.category ?: strings.none,
+                )
+                DetailRow(
+                    label = strings.addedLabel,
+                    value = formatDateTime(item.createdAt, strings.locale),
+                )
+                DetailRow(
+                    label = strings.updatedLabel,
+                    value = formatDateTime(item.updatedAt, strings.locale),
+                )
 
                 if (!item.notes.isNullOrBlank()) {
                     Text(
-                        text = "Notes",
+                        text = strings.notesLabel,
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
@@ -189,10 +202,10 @@ fun ItemDetailScreen(
                                         Intent(Intent.ACTION_VIEW, purchaseUrl.toUri())
                                     )
                                 }.onFailure {
-                                    urlError = "No app can open this link."
+                                    urlError = strings.noAppCanOpenLink
                                 }
                             } else {
-                                urlError = "This purchase link is invalid."
+                                urlError = strings.invalidPurchaseLink
                             }
                         },
                     ) {
@@ -201,7 +214,7 @@ fun ItemDetailScreen(
                             contentDescription = null,
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Open purchase link")
+                        Text(strings.openPurchaseLink)
                     }
                 }
                 urlError?.let { message ->
@@ -214,12 +227,12 @@ fun ItemDetailScreen(
 
                 HorizontalDivider()
                 Text(
-                    text = "Recent activity",
+                    text = strings.recentActivity,
                     style = MaterialTheme.typography.titleMedium,
                 )
                 if (state.events.isEmpty()) {
                     Text(
-                        text = "No savings activity yet.",
+                        text = strings.noSavingsActivityYet,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -228,13 +241,7 @@ fun ItemDetailScreen(
                         SavingsEventRow(event = event)
                     }
                     TextButton(onClick = onViewHistory) {
-                        Text(
-                            text = if (state.events.size > 5) {
-                                "View all ${state.events.size} transactions"
-                            } else {
-                                "View all transactions"
-                            }
-                        )
+                        Text(strings.viewAllTransactions(state.events.size))
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -244,8 +251,8 @@ fun ItemDetailScreen(
 
     if (showDeleteDialog) {
         ConfirmDeleteDialog(
-            title = "Delete item?",
-            message = "This removes the item, its image, and all related savings data. This cannot be undone.",
+            title = strings.deleteItemTitle,
+            message = strings.deleteItemMessage,
             onConfirm = {
                 showDeleteDialog = false
                 viewModel.deleteItem()
@@ -298,13 +305,14 @@ private fun SavingsCard(
     onDeposit: () -> Unit,
     onWithdraw: () -> Unit,
 ) {
+    val strings = LocalAppStrings.current
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = "Savings",
+                text = strings.savings,
                 style = MaterialTheme.typography.titleMedium,
             )
             Row(verticalAlignment = Alignment.Bottom) {
@@ -315,7 +323,7 @@ private fun SavingsCard(
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "of ${formatIdr(targetIdr)}",
+                    text = strings.ofTarget(formatIdr(targetIdr)),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -332,17 +340,17 @@ private fun SavingsCard(
             ) {
                 Text(
                     text = if (isGoalReached) {
-                        "Goal reached"
+                        strings.goalReached
                     } else {
-                        "${(progress * 100).roundToInt()}%"
+                        strings.percentageFunded((progress * 100).roundToInt())
                     },
                     style = MaterialTheme.typography.labelLarge,
                 )
                 Text(
                     text = if (isGoalReached) {
-                        "Target met"
+                        strings.targetMet
                     } else {
-                        "${formatIdr(remainingIdr)} remaining"
+                        strings.remainingLabel(formatIdr(remainingIdr))
                     },
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -350,21 +358,21 @@ private fun SavingsCard(
             }
             if (surplusIdr > 0) {
                 Text(
-                    text = "${formatIdr(surplusIdr)} above target",
+                    text = strings.aboveTarget(formatIdr(surplusIdr)),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.tertiary,
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(onClick = onDeposit, modifier = Modifier.weight(1f)) {
-                    Text("Add savings")
+                    Text(strings.addSavings)
                 }
                 OutlinedButton(
                     onClick = onWithdraw,
                     modifier = Modifier.weight(1f),
                     enabled = availableIdr > 0,
                 ) {
-                    Text("Withdraw")
+                    Text(strings.withdraw)
                 }
             }
         }
@@ -377,34 +385,36 @@ private fun PlanCard(
     projection: SavingsPlanProjection?,
     onEditPlan: () -> Unit,
 ) {
+    val strings = LocalAppStrings.current
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = "Savings plan",
+                text = strings.savingsPlan,
                 style = MaterialTheme.typography.titleMedium,
             )
 
             if (plan == null) {
                 Text(
-                    text = "No plan yet. Set a contribution amount and cadence to estimate completion.",
+                    text = strings.noPlanMessage,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Button(onClick = onEditPlan) {
-                    Text("Set a plan")
+                    Text(strings.setAPlan)
                 }
             } else {
                 Text(
-                    text = "${formatPlanFrequency(plan.frequency)} • ${formatIdr(plan.contributionIdr)}",
+                    text = "${strings.planFrequency(plan.frequency)} • " +
+                        formatIdr(plan.contributionIdr),
                     style = MaterialTheme.typography.titleSmall,
                 )
 
                 if (!plan.active) {
                     Text(
-                        text = "Plan paused",
+                        text = strings.planPaused,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -413,7 +423,7 @@ private fun PlanCard(
                 when {
                     projection == null -> {
                         Text(
-                            text = "No estimate available.",
+                            text = strings.noEstimateAvailable,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -421,13 +431,15 @@ private fun PlanCard(
 
                     projection.isGoalReached -> {
                         Text(
-                            text = "Goal reached",
+                            text = strings.goalReached,
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.primary,
                         )
                         projection.completionDate?.let { date ->
                             Text(
-                                text = "Completion date: ${formatDate(date)}",
+                                text = strings.completionDateLabel(
+                                    formatDate(date, strings.locale)
+                                ),
                                 style = MaterialTheme.typography.bodyMedium,
                             )
                         }
@@ -435,43 +447,43 @@ private fun PlanCard(
 
                     !plan.active -> {
                         Text(
-                            text = "Resume the plan to see its completion estimate.",
+                            text = strings.resumePlanToEstimate,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
 
                     else -> {
-                        val contributionLabel =
-                            if (projection.requiredContributions == 1L) {
-                                "1 contribution"
-                            } else {
-                                "${projection.requiredContributions} contributions"
-                            }
                         Text(
-                            text = contributionLabel,
+                            text = strings.contributionCount(
+                                projection.requiredContributions
+                            ),
                             style = MaterialTheme.typography.titleSmall,
                         )
                         Text(
-                            text = "Remaining: ${formatIdr(projection.remainingIdr)}",
+                            text = strings.remainingValue(
+                                formatIdr(projection.remainingIdr)
+                            ),
                             style = MaterialTheme.typography.bodyMedium,
                         )
                         val completionDate = projection.completionDate
                         if (completionDate == null) {
                             Text(
-                                text = "The projected date is too far in the future.",
+                                text = strings.dateTooFar,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.error,
                             )
                         } else {
                             Text(
-                                text = "Estimated completion: ${formatDate(completionDate)}",
+                                text = strings.estimatedCompletionLabel(
+                                    formatDate(completionDate, strings.locale)
+                                ),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.primary,
                             )
                         }
                         Text(
-                            text = "Estimate assumes contributions beginning today and continuing on schedule.",
+                            text = strings.estimateAssumes,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -479,7 +491,7 @@ private fun PlanCard(
                 }
 
                 OutlinedButton(onClick = onEditPlan) {
-                    Text("Edit plan")
+                    Text(strings.editPlan)
                 }
             }
         }

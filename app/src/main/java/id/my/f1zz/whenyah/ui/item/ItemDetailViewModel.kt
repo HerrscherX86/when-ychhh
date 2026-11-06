@@ -12,6 +12,7 @@ import id.my.f1zz.whenyah.data.repository.PurchaseRepository
 import id.my.f1zz.whenyah.data.repository.SavingsPlanRepository
 import id.my.f1zz.whenyah.data.repository.SavingsRepository
 import id.my.f1zz.whenyah.data.repository.WishlistRepository
+import id.my.f1zz.whenyah.domain.i18n.LanguageStore
 import id.my.f1zz.whenyah.domain.model.ItemStatus
 import id.my.f1zz.whenyah.domain.plan.SavingsPlanCalculator
 import id.my.f1zz.whenyah.domain.plan.SavingsPlanProjection
@@ -63,6 +64,7 @@ class ItemDetailViewModel @Inject constructor(
     private val savingsPlanRepository: SavingsPlanRepository,
     private val purchaseRepository: PurchaseRepository,
     private val reminderCoordinator: ReminderCoordinator,
+    private val languageStore: LanguageStore,
 ) : ViewModel() {
     private val itemId = UUID.fromString(
         checkNotNull(savedStateHandle.get<String>("itemId")) {
@@ -145,9 +147,10 @@ class ItemDetailViewModel @Inject constructor(
         val type = form.type ?: return
         val amount = ItemValidation.parseIdrAmount(form.amount)
 
+        val strings = languageStore.strings()
         if (amount == null || amount <= 0) {
             _transactionForm.update {
-                it.copy(error = "Enter a valid amount greater than zero")
+                it.copy(error = strings.enterValidAmount)
             }
             return
         }
@@ -156,7 +159,7 @@ class ItemDetailViewModel @Inject constructor(
             amount > uiState.value.savings.availableIdr
         ) {
             _transactionForm.update {
-                it.copy(error = "Withdrawal exceeds available savings")
+                it.copy(error = strings.withdrawalExceeds)
             }
             return
         }
@@ -182,11 +185,11 @@ class ItemDetailViewModel @Inject constructor(
                 onSuccess = {
                     _transactionForm.value = TransactionFormState()
                 },
-                onFailure = { failure ->
+                onFailure = {
                     _transactionForm.update {
                         it.copy(
                             isSaving = false,
-                            error = failure.message ?: "Could not record transaction",
+                            error = languageStore.strings().couldNotRecordTransaction,
                         )
                     }
                 },
@@ -213,8 +216,7 @@ class ItemDetailViewModel @Inject constructor(
                 _purchaseState.update {
                     it.copy(
                         isPurchasing = false,
-                        error = result.exceptionOrNull()?.message
-                            ?: "Could not mark the item purchased",
+                        error = languageStore.strings().couldNotMarkPurchased,
                     )
                 }
             }

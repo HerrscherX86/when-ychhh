@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import id.my.f1zz.whenyah.data.local.entity.CollectionEntity
 import id.my.f1zz.whenyah.data.repository.WishlistRepository
+import id.my.f1zz.whenyah.domain.i18n.LanguageStore
 import id.my.f1zz.whenyah.domain.validation.ItemValidation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,6 +40,7 @@ data class ItemFormState(
 class ItemEditorViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: WishlistRepository,
+    private val languageStore: LanguageStore,
 ) : ViewModel() {
     private val itemId: UUID? = savedStateHandle.get<String>("itemId")?.let(UUID::fromString)
     private val initialCollectionId: UUID? =
@@ -70,7 +72,10 @@ class ItemEditorViewModel @Inject constructor(
                 val item = repository.getItem(itemId)
                 if (item == null) {
                     _uiState.update {
-                        it.copy(isLoading = false, saveError = "Item not found")
+                        it.copy(
+                            isLoading = false,
+                            saveError = languageStore.strings().itemNotFound,
+                        )
                     }
                     return@launch
                 }
@@ -129,7 +134,7 @@ class ItemEditorViewModel @Inject constructor(
                 }
                 .onFailure {
                     _uiState.update {
-                        it.copy(saveError = "Could not load the selected image")
+                        it.copy(saveError = languageStore.strings().couldNotLoadImage)
                     }
                 }
         }
@@ -145,22 +150,23 @@ class ItemEditorViewModel @Inject constructor(
     }
 
     fun save() {
+        val strings = languageStore.strings()
         val state = _uiState.value
         val nameError = if (ItemValidation.isValidName(state.name)) {
             null
         } else {
-            "Enter an item name"
+            strings.enterItemName
         }
         val price = ItemValidation.parseIdrAmount(state.price)
         val priceError = if (price == null) {
-            "Enter a valid IDR amount using digits only"
+            strings.enterValidIdr
         } else {
             null
         }
         val purchaseUrlError = if (ItemValidation.isValidPurchaseUrl(state.purchaseUrl)) {
             null
         } else {
-            "Enter a valid http(s) URL"
+            strings.enterValidUrl
         }
 
         if (nameError != null || priceError != null || purchaseUrlError != null) {
@@ -196,7 +202,10 @@ class ItemEditorViewModel @Inject constructor(
                 }
             }.onFailure {
                 _uiState.update {
-                    it.copy(isSaving = false, saveError = "Could not save the item")
+                    it.copy(
+                        isSaving = false,
+                        saveError = languageStore.strings().couldNotSaveItem,
+                    )
                 }
             }
         }

@@ -35,6 +35,7 @@ import id.my.f1zz.whenyah.ui.components.ConfirmDeleteDialog
 import id.my.f1zz.whenyah.ui.components.EmptyState
 import id.my.f1zz.whenyah.ui.components.ItemImage
 import id.my.f1zz.whenyah.ui.components.SavingsEventRow
+import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
 import id.my.f1zz.whenyah.ui.util.formatDateTime
 import id.my.f1zz.whenyah.ui.util.formatIdr
 
@@ -45,6 +46,7 @@ fun ArchivedItemDetailScreen(
     viewModel: ArchivedItemDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val strings = LocalAppStrings.current
     val restored by viewModel.restored.collectAsStateWithLifecycle()
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
@@ -65,8 +67,8 @@ fun ArchivedItemDetailScreen(
         item == null -> {
             Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 EmptyState(
-                    title = "Item not found",
-                    message = "It may have been deleted.",
+                    title = strings.itemNotFound,
+                    message = strings.itemMayBeDeleted,
                 )
             }
         }
@@ -102,32 +104,34 @@ fun ArchivedItemDetailScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(
-                            text = "Purchase record",
+                            text = strings.purchaseRecord,
                             style = MaterialTheme.typography.titleMedium,
                         )
                         val purchase = state.purchaseRecord
                         if (purchase == null) {
                             Text(
-                                text = "Purchase record unavailable.",
+                                text = strings.purchaseRecordUnavailable,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         } else {
                             Text(
-                                text = "Purchased ${formatDateTime(purchase.completedAt)}",
+                                text = strings.purchasedOn(
+                                    formatDateTime(purchase.completedAt, strings.locale)
+                                ),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             ArchivedDetailRow(
-                                label = "Saved before purchase",
+                                label = strings.savedBeforePurchase,
                                 value = formatIdr(purchase.savingsSpentIdr),
                             )
                             ArchivedDetailRow(
-                                label = "Spent from savings",
+                                label = strings.spentFromSavingsLabel,
                                 value = formatIdr(purchase.savingsSpentIdr),
                             )
                             Text(
-                                text = "Savings spent is the amount you set aside, not necessarily the full purchase price.",
+                                text = strings.savingsSpentDisclaimer,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -137,12 +141,12 @@ fun ArchivedItemDetailScreen(
 
                 HorizontalDivider()
                 Text(
-                    text = "Transaction history",
+                    text = strings.transactionHistory,
                     style = MaterialTheme.typography.titleMedium,
                 )
                 if (state.events.isEmpty()) {
                     Text(
-                        text = "No ledger entries.",
+                        text = strings.noLedgerEntries,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -164,7 +168,7 @@ fun ArchivedItemDetailScreen(
                     onClick = viewModel::restoreItem,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Restore to active")
+                    Text(strings.restoreToActive)
                 }
                 OutlinedButton(
                     onClick = { showDeleteDialog = true },
@@ -173,7 +177,7 @@ fun ArchivedItemDetailScreen(
                         contentColor = MaterialTheme.colorScheme.error,
                     ),
                 ) {
-                    Text("Delete permanently")
+                    Text(strings.deletePermanently)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -182,8 +186,8 @@ fun ArchivedItemDetailScreen(
 
     if (showDeleteDialog) {
         ConfirmDeleteDialog(
-            title = "Delete archived item?",
-            message = "This permanently deletes the item, image, ledger, plan, and purchase record. It cannot be undone.",
+            title = strings.deleteArchivedItemTitle,
+            message = strings.deleteArchivedItemMessage,
             onConfirm = {
                 showDeleteDialog = false
                 viewModel.deleteItem()

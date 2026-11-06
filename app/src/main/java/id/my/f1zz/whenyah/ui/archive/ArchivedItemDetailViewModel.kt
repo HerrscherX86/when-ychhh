@@ -11,6 +11,7 @@ import id.my.f1zz.whenyah.data.notification.ReminderCoordinator
 import id.my.f1zz.whenyah.data.repository.PurchaseRepository
 import id.my.f1zz.whenyah.data.repository.SavingsRepository
 import id.my.f1zz.whenyah.data.repository.WishlistRepository
+import id.my.f1zz.whenyah.domain.i18n.LanguageStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -35,6 +36,7 @@ class ArchivedItemDetailViewModel @Inject constructor(
     private val wishlistRepository: WishlistRepository,
     private val purchaseRepository: PurchaseRepository,
     private val reminderCoordinator: ReminderCoordinator,
+    private val languageStore: LanguageStore,
     savingsRepository: SavingsRepository,
 ) : ViewModel() {
     private val itemId = UUID.fromString(
@@ -78,8 +80,7 @@ class ArchivedItemDetailViewModel @Inject constructor(
                 }
                 _restored.value = true
             } else {
-                _error.value = result.exceptionOrNull()?.message
-                    ?: "Could not restore the item"
+                _error.value = languageStore.strings().couldNotRestoreItem
             }
         }
     }
@@ -93,8 +94,8 @@ class ArchivedItemDetailViewModel @Inject constructor(
                     }
                     _deleted.value = true
                 },
-                onFailure = { failure ->
-                    _error.value = failure.message ?: "Could not delete the item"
+                onFailure = {
+                    _error.value = languageStore.strings().couldNotDeleteItem
                 },
             )
         }

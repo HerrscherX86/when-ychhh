@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
 
 @Composable
 fun CollectionNameDialog(
@@ -21,6 +22,7 @@ fun CollectionNameDialog(
     onConfirm: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val strings = LocalAppStrings.current
     var name by rememberSaveable(initialName) { mutableStateOf(initialName) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -35,7 +37,7 @@ fun CollectionNameDialog(
                     name = it
                     error = null
                 },
-                label = { Text("Collection name") },
+                label = { Text(strings.collectionNameLabel) },
                 singleLine = true,
                 isError = error != null,
                 supportingText = error?.let { message -> { Text(message) } },
@@ -46,7 +48,7 @@ fun CollectionNameDialog(
                 onClick = {
                     val trimmed = name.trim()
                     if (trimmed.isBlank()) {
-                        error = "Name is required"
+                        error = strings.nameRequired
                     } else {
                         onConfirm(trimmed)
                     }
@@ -57,7 +59,7 @@ fun CollectionNameDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(strings.cancel)
             }
         },
     )
@@ -70,18 +72,19 @@ fun ConfirmDeleteDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val strings = LocalAppStrings.current
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = { Text(message) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("Delete")
+                Text(strings.delete)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(strings.cancel)
             }
         },
     )

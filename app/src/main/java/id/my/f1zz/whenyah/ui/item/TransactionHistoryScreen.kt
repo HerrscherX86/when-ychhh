@@ -25,6 +25,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import id.my.f1zz.whenyah.ui.components.EmptyState
 import id.my.f1zz.whenyah.ui.components.SavingsEventRow
+import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
 import id.my.f1zz.whenyah.ui.util.formatIdr
 
 @Composable
@@ -33,6 +34,7 @@ fun TransactionHistoryScreen(
     viewModel: TransactionHistoryViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val strings = LocalAppStrings.current
     val item = state.item
 
     when {
@@ -45,8 +47,8 @@ fun TransactionHistoryScreen(
         item == null -> {
             Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 EmptyState(
-                    title = "Item not found",
-                    message = "It may have been deleted.",
+                    title = strings.itemNotFound,
+                    message = strings.itemMayBeDeleted,
                 )
             }
         }
@@ -73,7 +75,7 @@ fun TransactionHistoryScreen(
                                 color = MaterialTheme.colorScheme.primary,
                             )
                             Text(
-                                text = "of ${formatIdr(item.targetPriceIdr)}",
+                                text = strings.ofTarget(formatIdr(item.targetPriceIdr)),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -89,7 +91,7 @@ fun TransactionHistoryScreen(
 
                 item {
                     Text(
-                        text = "All transactions",
+                        text = strings.allTransactions,
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(top = 8.dp),
                     )
@@ -98,8 +100,8 @@ fun TransactionHistoryScreen(
                 if (state.events.isEmpty()) {
                     item {
                         EmptyState(
-                            title = "No transactions yet",
-                            message = "Add savings or withdraw from this item to build its history.",
+                            title = strings.noTransactionsYet,
+                            message = strings.noTransactionsMessage,
                         )
                     }
                 } else {

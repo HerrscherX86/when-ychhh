@@ -22,13 +22,16 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import id.my.f1zz.whenyah.domain.i18n.AppStrings
 import id.my.f1zz.whenyah.navigation.Routes
 import id.my.f1zz.whenyah.navigation.TopLevelDestination
 import id.my.f1zz.whenyah.ui.archive.ArchiveScreen
 import id.my.f1zz.whenyah.ui.archive.ArchivedItemDetailScreen
 import id.my.f1zz.whenyah.ui.collections.CollectionDetailScreen
 import id.my.f1zz.whenyah.ui.collections.CollectionsScreen
+import id.my.f1zz.whenyah.ui.home.ActivityScreen
 import id.my.f1zz.whenyah.ui.home.HomeScreen
+import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
 import id.my.f1zz.whenyah.ui.item.ItemDetailScreen
 import id.my.f1zz.whenyah.ui.item.ItemEditorScreen
 import id.my.f1zz.whenyah.ui.item.SavingsPlanScreen
@@ -39,6 +42,7 @@ import java.util.UUID
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WhenYahApp() {
+    val strings = LocalAppStrings.current
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -49,15 +53,16 @@ fun WhenYahApp() {
     val isTopLevel = currentTopLevelDestination != null
 
     val title = when (currentRoute) {
-        Routes.ITEM_DETAIL -> "Item details"
-        Routes.ITEM_HISTORY -> "Transaction history"
-        Routes.ITEM_PLAN -> "Savings plan"
-        Routes.ITEM_ADD -> "Add item"
-        Routes.ITEM_EDIT -> "Edit item"
-        Routes.COLLECTION_DETAIL -> "Collection"
-        Routes.ARCHIVE -> "Purchased archive"
-        Routes.ARCHIVE_DETAIL -> "Archived item"
-        else -> currentTopLevelDestination?.label ?: "When Yah"
+        Routes.ITEM_DETAIL -> strings.titleItemDetails
+        Routes.ITEM_HISTORY -> strings.titleTransactionHistory
+        Routes.ITEM_PLAN -> strings.titleSavingsPlan
+        Routes.ITEM_ADD -> strings.titleAddItem
+        Routes.ITEM_EDIT -> strings.titleEditItem
+        Routes.COLLECTION_DETAIL -> strings.titleCollection
+        Routes.ARCHIVE -> strings.titlePurchasedArchive
+        Routes.ARCHIVE_DETAIL -> strings.titleArchivedItem
+        Routes.ACTIVITY -> strings.titleActivity
+        else -> currentTopLevelDestination?.label(strings) ?: strings.appName
     }
 
     Scaffold(
@@ -69,7 +74,7 @@ fun WhenYahApp() {
                         IconButton(onClick = { navController.navigateUp() }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
+                                contentDescription = strings.back,
                             )
                         }
                     }
@@ -94,7 +99,7 @@ fun WhenYahApp() {
                                 }
                             },
                             icon = { Icon(destination.icon, contentDescription = null) },
-                            label = { Text(destination.label) },
+                            label = { Text(destination.label(strings)) },
                         )
                     }
                 }
@@ -112,6 +117,10 @@ fun WhenYahApp() {
                     onItemClick = { itemId ->
                         navController.navigate(Routes.itemDetail(itemId))
                     },
+                    onPlanClick = { itemId ->
+                        navController.navigate(Routes.itemPlan(itemId))
+                    },
+                    onViewAllActivity = { navController.navigate(Routes.ACTIVITY) },
                     onOpenArchive = { navController.navigate(Routes.ARCHIVE) },
                 )
             }
@@ -195,6 +204,10 @@ fun WhenYahApp() {
                 )
             }
 
+            composable(Routes.ACTIVITY) {
+                ActivityScreen()
+            }
+
             composable(Routes.ARCHIVE) {
                 ArchiveScreen(
                     onItemClick = { itemId ->
@@ -250,4 +263,10 @@ fun WhenYahApp() {
             }
         }
     }
+}
+
+private fun TopLevelDestination.label(strings: AppStrings): String = when (this) {
+    TopLevelDestination.HOME -> strings.navHome
+    TopLevelDestination.COLLECTIONS -> strings.navCollections
+    TopLevelDestination.SETTINGS -> strings.navSettings
 }

@@ -12,6 +12,7 @@ object Routes {
 
     const val ARCHIVE = "archive"
     const val ARCHIVE_DETAIL = "archive/{itemId}"
+    const val ACTIVITY = "activity"
 
     fun collectionDetail(collectionId: UUID): String = "collection/$collectionId"
 

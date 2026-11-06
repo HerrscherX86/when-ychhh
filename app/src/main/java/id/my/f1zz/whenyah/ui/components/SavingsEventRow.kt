@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import id.my.f1zz.whenyah.data.local.entity.SavingsEventEntity
 import id.my.f1zz.whenyah.domain.model.SavingsEventType
+import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
 import id.my.f1zz.whenyah.ui.util.formatDateTime
 import id.my.f1zz.whenyah.ui.util.formatIdr
 
@@ -29,11 +30,12 @@ fun SavingsEventRow(
     modifier: Modifier = Modifier,
     itemName: String? = null,
 ) {
+    val strings = LocalAppStrings.current
     val isDeposit = event.type == SavingsEventType.DEPOSIT
     val label = when (event.type) {
-        SavingsEventType.DEPOSIT -> "Deposit"
-        SavingsEventType.WITHDRAWAL -> "Withdrawal"
-        SavingsEventType.PURCHASE_SPEND -> "Spent on purchase"
+        SavingsEventType.DEPOSIT -> strings.deposit
+        SavingsEventType.WITHDRAWAL -> strings.withdrawal
+        SavingsEventType.PURCHASE_SPEND -> strings.spentOnPurchase
     }
     val amountColor: Color = when (event.type) {
         SavingsEventType.DEPOSIT -> MaterialTheme.colorScheme.primary
@@ -83,7 +85,7 @@ fun SavingsEventRow(
                 )
             }
             Text(
-                text = formatDateTime(event.createdAt),
+                text = formatDateTime(event.createdAt, strings.locale),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

@@ -8,10 +8,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 enum class TopLevelDestination(
     val route: String,
-    val label: String,
-    val icon: ImageVector
+    val icon: ImageVector,
 ) {
-    HOME("home", "Home", Icons.Outlined.Home),
-    COLLECTIONS("collections", "Collections", Icons.Outlined.Collections),
-    SETTINGS("settings", "Settings", Icons.Outlined.Settings),
+    HOME("home", Icons.Outlined.Home),
+    COLLECTIONS("collections", Icons.Outlined.Collections),
+    SETTINGS("settings", Icons.Outlined.Settings),
 }

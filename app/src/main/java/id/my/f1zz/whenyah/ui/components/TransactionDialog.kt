@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import id.my.f1zz.whenyah.domain.savings.TransactionType
+import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
 import id.my.f1zz.whenyah.ui.util.formatIdr
 
 @Composable
@@ -31,6 +32,7 @@ fun TransactionDialog(
     onDismiss: () -> Unit,
     onSubmit: () -> Unit,
 ) {
+    val strings = LocalAppStrings.current
     val isDeposit = type == TransactionType.DEPOSIT
 
     AlertDialog(
@@ -38,13 +40,13 @@ fun TransactionDialog(
             if (!isSaving) onDismiss()
         },
         title = {
-            Text(if (isDeposit) "Add savings" else "Withdraw savings")
+            Text(if (isDeposit) strings.addSavingsTitle else strings.withdrawSavingsTitle)
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (!isDeposit) {
                     Text(
-                        text = "Available: ${formatIdr(availableBalanceIdr)}",
+                        text = strings.availableLabel(formatIdr(availableBalanceIdr)),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -53,7 +55,7 @@ fun TransactionDialog(
                     value = amount,
                     onValueChange = onAmountChange,
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Amount (IDR)") },
+                    label = { Text(strings.amountIdr) },
                     singleLine = true,
                     enabled = !isSaving,
                     isError = error != null,
@@ -63,7 +65,7 @@ fun TransactionDialog(
                     value = note,
                     onValueChange = onNoteChange,
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Note (optional)") },
+                    label = { Text(strings.noteOptional) },
                     minLines = 2,
                     enabled = !isSaving,
                 )
@@ -87,7 +89,7 @@ fun TransactionDialog(
                         strokeWidth = 2.dp,
                     )
                 } else {
-                    Text(if (isDeposit) "Add" else "Withdraw")
+                    Text(if (isDeposit) strings.add else strings.withdraw)
                 }
             }
         },
@@ -96,7 +98,7 @@ fun TransactionDialog(
                 onClick = onDismiss,
                 enabled = !isSaving,
             ) {
-                Text("Cancel")
+                Text(strings.cancel)
             }
         },
     )

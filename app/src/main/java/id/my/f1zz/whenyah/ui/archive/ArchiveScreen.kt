@@ -27,6 +27,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import id.my.f1zz.whenyah.ui.components.EmptyState
 import id.my.f1zz.whenyah.ui.components.ItemImage
+import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
 import id.my.f1zz.whenyah.ui.util.formatDateTime
 import id.my.f1zz.whenyah.ui.util.formatIdr
 import java.util.UUID
@@ -38,6 +39,7 @@ fun ArchiveScreen(
     viewModel: ArchiveViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val strings = LocalAppStrings.current
 
     when {
         state.isLoading -> {
@@ -49,8 +51,8 @@ fun ArchiveScreen(
         state.items.isEmpty() -> {
             Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 EmptyState(
-                    title = "No purchased items yet",
-                    message = "Items you mark as purchased will appear here with their savings history.",
+                    title = strings.noPurchasedItemsYet,
+                    message = strings.noPurchasedItemsMessage,
                 )
             }
         }
@@ -91,18 +93,22 @@ fun ArchiveScreen(
                                 val purchase = entry.purchaseRecord
                                 if (purchase != null) {
                                     Text(
-                                        text = "Purchased ${formatDateTime(purchase.completedAt)}",
+                                        text = strings.purchasedOn(
+                                            formatDateTime(purchase.completedAt, strings.locale)
+                                        ),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                     Text(
-                                        text = "Spent from savings ${formatIdr(purchase.savingsSpentIdr)}",
+                                        text = strings.spentFromSavings(
+                                            formatIdr(purchase.savingsSpentIdr)
+                                        ),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 } else {
                                     Text(
-                                        text = "Purchase details unavailable",
+                                        text = strings.purchaseDetailsUnavailable,
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )

@@ -537,6 +537,7 @@ private fun PurchaseRecordEntity.toBackup() = BackupPurchaseRecord(
 )
 
 private fun id.my.f1zz.whenyah.domain.settings.AppSettings.toBackup() = BackupSettings(
+    language = language.name,
     themeMode = themeMode.name,
     accentColor = accentColor.name,
     useDynamicColor = useDynamicColor,

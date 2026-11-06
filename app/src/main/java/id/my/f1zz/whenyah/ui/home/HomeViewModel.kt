@@ -100,13 +100,15 @@ class HomeViewModel @Inject constructor(
                 }
             }
             .sortedByDescending { it.event.createdAt }
-            .take(5)
+            .take(3)
             .toList()
 
         val upcomingPlans = plans
             .asSequence()
             .mapNotNull { plan ->
                 val entry = itemsById[plan.itemId] ?: return@mapNotNull null
+                if (entry.savings.isGoalReached) return@mapNotNull null
+
                 val projection = runCatching {
                     SavingsPlanCalculator.project(
                         targetPriceIdr = entry.item.targetPriceIdr,
@@ -116,6 +118,7 @@ class HomeViewModel @Inject constructor(
                         startDate = today,
                     )
                 }.getOrNull()
+                if (projection?.isGoalReached == true) return@mapNotNull null
 
                 DashboardUpcomingPlan(
                     plan = plan,

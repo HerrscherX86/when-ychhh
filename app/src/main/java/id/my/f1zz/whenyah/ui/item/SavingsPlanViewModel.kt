@@ -10,6 +10,7 @@ import id.my.f1zz.whenyah.data.notification.ReminderCoordinator
 import id.my.f1zz.whenyah.data.repository.SavingsPlanRepository
 import id.my.f1zz.whenyah.data.repository.SavingsRepository
 import id.my.f1zz.whenyah.data.repository.WishlistRepository
+import id.my.f1zz.whenyah.domain.i18n.LanguageStore
 import id.my.f1zz.whenyah.domain.model.PlanFrequency
 import id.my.f1zz.whenyah.domain.plan.SavingsPlanCalculator
 import id.my.f1zz.whenyah.domain.plan.SavingsPlanProjection
@@ -48,6 +49,7 @@ class SavingsPlanViewModel @Inject constructor(
     private val savingsRepository: SavingsRepository,
     private val savingsPlanRepository: SavingsPlanRepository,
     private val reminderCoordinator: ReminderCoordinator,
+    private val languageStore: LanguageStore,
 ) : ViewModel() {
     private val itemId = UUID.fromString(
         checkNotNull(savedStateHandle.get<String>("itemId")) {
@@ -119,15 +121,16 @@ class SavingsPlanViewModel @Inject constructor(
 
     fun savePlan() {
         val state = _uiState.value
+        val strings = languageStore.strings()
         if (state.item == null) {
-            _uiState.update { it.copy(error = "Item not found") }
+            _uiState.update { it.copy(error = strings.itemNotFound) }
             return
         }
 
         val amount = ItemValidation.parseIdrAmount(state.contribution)
         if (amount == null || amount <= 0) {
             _uiState.update {
-                it.copy(error = "Enter a valid contribution greater than zero")
+                it.copy(error = strings.enterValidContribution)
             }
             return
         }
@@ -154,7 +157,7 @@ class SavingsPlanViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isSaving = false,
-                        error = failure.message ?: "Could not save the plan",
+                        error = strings.couldNotSavePlan,
                     )
                 }
             }
@@ -176,7 +179,7 @@ class SavingsPlanViewModel @Inject constructor(
                 }
             }.onFailure { failure ->
                 _uiState.update {
-                    it.copy(error = failure.message ?: "Could not update the plan")
+                    it.copy(error = languageStore.strings().couldNotUpdatePlan)
                 }
             }
         }
@@ -195,7 +198,7 @@ class SavingsPlanViewModel @Inject constructor(
                 }
             }.onFailure { failure ->
                 _uiState.update {
-                    it.copy(error = failure.message ?: "Could not delete the plan")
+                    it.copy(error = languageStore.strings().couldNotDeletePlan)
                 }
             }
         }

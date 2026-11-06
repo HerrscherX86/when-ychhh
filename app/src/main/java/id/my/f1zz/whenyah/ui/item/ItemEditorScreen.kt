@@ -43,7 +43,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import id.my.f1zz.whenyah.data.local.entity.CollectionEntity
+import id.my.f1zz.whenyah.domain.i18n.AppStrings
 import id.my.f1zz.whenyah.ui.components.ItemImage
+import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
 import java.util.UUID
 
 @Composable
@@ -53,6 +55,7 @@ fun ItemEditorScreen(
     viewModel: ItemEditorViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val strings = LocalAppStrings.current
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
     ) { uri ->
@@ -80,7 +83,7 @@ fun ItemEditorScreen(
     ) {
         ItemImage(
             relativePath = state.imageRelativePath,
-            contentDescription = "Selected item image",
+            contentDescription = strings.selectedItemImage,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(200.dp),
@@ -93,11 +96,13 @@ fun ItemEditorScreen(
                     )
                 },
             ) {
-                Text(if (state.imageRelativePath == null) "Choose image" else "Change image")
+                Text(
+                    if (state.imageRelativePath == null) strings.chooseImage else strings.changeImage
+                )
             }
             if (state.imageRelativePath != null) {
                 TextButton(onClick = viewModel::onRemoveImage) {
-                    Text("Remove")
+                    Text(strings.remove)
                 }
             }
         }
@@ -106,7 +111,7 @@ fun ItemEditorScreen(
             value = state.name,
             onValueChange = viewModel::onNameChange,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Name") },
+            label = { Text(strings.nameLabel) },
             singleLine = true,
             isError = state.nameError != null,
             supportingText = state.nameError?.let { message -> { Text(message) } },
@@ -116,7 +121,7 @@ fun ItemEditorScreen(
             value = state.price,
             onValueChange = viewModel::onPriceChange,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Target price (IDR)") },
+            label = { Text(strings.targetPriceIdr) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             isError = state.priceError != null,
@@ -127,25 +132,26 @@ fun ItemEditorScreen(
             value = state.category,
             onValueChange = viewModel::onCategoryChange,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Category (optional)") },
+            label = { Text(strings.categoryOptional) },
             singleLine = true,
         )
 
         Text(
-            text = "Collection",
+            text = strings.collectionLabel,
             style = MaterialTheme.typography.labelLarge,
         )
         CollectionSelector(
             collections = state.collections,
             selectedId = state.collectionId,
             onSelect = viewModel::onCollectionChange,
+            strings = strings,
         )
 
         OutlinedTextField(
             value = state.purchaseUrl,
             onValueChange = viewModel::onPurchaseUrlChange,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Purchase URL (optional)") },
+            label = { Text(strings.purchaseUrlOptional) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
             isError = state.purchaseUrlError != null,
@@ -156,7 +162,7 @@ fun ItemEditorScreen(
             value = state.notes,
             onValueChange = viewModel::onNotesChange,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Notes (optional)") },
+            label = { Text(strings.notesOptional) },
             minLines = 3,
             maxLines = 6,
         )
@@ -181,7 +187,7 @@ fun ItemEditorScreen(
                     color = MaterialTheme.colorScheme.onPrimary,
                 )
             } else {
-                Text(if (state.isEditing) "Save changes" else "Add item")
+                Text(if (state.isEditing) strings.saveChanges else strings.addItem)
             }
         }
 
@@ -194,9 +200,11 @@ private fun CollectionSelector(
     collections: List<CollectionEntity>,
     selectedId: UUID?,
     onSelect: (UUID?) -> Unit,
+    strings: AppStrings,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val selectedName = collections.firstOrNull { it.id == selectedId }?.name ?: "No collection"
+    val selectedName = collections.firstOrNull { it.id == selectedId }?.name
+        ?: strings.noCollection
 
     Box {
         OutlinedButton(
@@ -215,7 +223,7 @@ private fun CollectionSelector(
             onDismissRequest = { expanded = false },
         ) {
             DropdownMenuItem(
-                text = { Text("No collection") },
+                text = { Text(strings.noCollection) },
                 onClick = {
                     onSelect(null)
                     expanded = false

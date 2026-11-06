@@ -9,6 +9,7 @@ import id.my.f1zz.whenyah.data.backup.BackupSavingsPlan
 import id.my.f1zz.whenyah.data.backup.BackupSettings
 import id.my.f1zz.whenyah.data.backup.BackupValidationException
 import id.my.f1zz.whenyah.data.backup.BackupValidator
+import id.my.f1zz.whenyah.domain.i18n.AppLanguage
 import id.my.f1zz.whenyah.domain.model.PlanFrequency
 import id.my.f1zz.whenyah.domain.model.SavingsEventType
 import id.my.f1zz.whenyah.domain.settings.AccentColor
@@ -38,6 +39,7 @@ class BackupValidatorTest {
         assertEquals(1, validated.items.size)
         assertEquals(1, validated.events.size)
         assertEquals(1, validated.plans.size)
+        assertEquals(AppLanguage.INDONESIAN, validated.settings.language)
         assertEquals(ThemeMode.SYSTEM, validated.settings.themeMode)
         assertEquals(AccentColor.BLUE, validated.settings.accentColor)
         assertEquals(SummaryCadence.WEEKLY, validated.settings.summaryCadence)
@@ -274,6 +276,7 @@ class BackupValidatorTest {
         ),
         purchaseRecords = emptyList(),
         settings = BackupSettings(
+            language = "INDONESIAN",
             themeMode = "SYSTEM",
             accentColor = "BLUE",
             useDynamicColor = false,

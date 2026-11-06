@@ -9,13 +9,25 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.outlined.Archive
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
@@ -24,23 +36,29 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import id.my.f1zz.whenyah.data.repository.WishlistItemWithSavings
 import id.my.f1zz.whenyah.domain.dashboard.DashboardSummary
+import id.my.f1zz.whenyah.domain.model.SavingsEventType
 import id.my.f1zz.whenyah.ui.components.EmptyState
 import id.my.f1zz.whenyah.ui.components.ItemCard
-import id.my.f1zz.whenyah.ui.components.SavingsEventRow
+import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
 import id.my.f1zz.whenyah.ui.util.formatDate
 import id.my.f1zz.whenyah.ui.util.formatIdr
-import id.my.f1zz.whenyah.ui.util.formatPlanFrequency
+import id.my.f1zz.whenyah.ui.util.formatShortDate
 import java.util.UUID
 import kotlin.math.roundToInt
 
@@ -48,11 +66,14 @@ import kotlin.math.roundToInt
 fun HomeScreen(
     onAddItem: () -> Unit,
     onItemClick: (UUID) -> Unit,
+    onPlanClick: (UUID) -> Unit,
+    onViewAllActivity: () -> Unit,
     onOpenArchive: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val strings = LocalAppStrings.current
 
     Box(modifier = modifier.fillMaxSize()) {
         if (state.isLoading) {
@@ -63,52 +84,63 @@ fun HomeScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
+                    start = 20.dp,
+                    end = 20.dp,
                     top = 8.dp,
-                    bottom = 96.dp,
+                    bottom = 112.dp,
                 ),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 item {
-                    DashboardSummaryCard(
+                    OverviewCard(
                         summary = state.summary,
                         onOpenArchive = onOpenArchive,
                     )
                 }
 
                 if (state.recentActivity.isNotEmpty()) {
-                    item { SectionHeader("Recent activity") }
-                    items(items = state.recentActivity, key = { "activity-${it.event.id}" }) { activity ->
-                        SavingsEventRow(
-                            event = activity.event,
-                            itemName = activity.itemName,
+                    item {
+                        SectionHeader(
+                            title = strings.recentActivity,
+                            action = {
+                                TextButton(onClick = onViewAllActivity) {
+                                    Text(strings.viewAll)
+                                }
+                            },
                         )
+                    }
+                    item {
+                        RecentActivityCard(activities = state.recentActivity)
                     }
                 }
 
                 if (state.upcomingPlans.isNotEmpty()) {
-                    item { SectionHeader("Upcoming plans") }
-                    items(items = state.upcomingPlans, key = { "plan-${it.plan.id}" }) { upcoming ->
-                        UpcomingPlanCard(upcoming)
+                    item { SectionHeader(title = strings.upcomingPlans) }
+                    items(
+                        items = state.upcomingPlans,
+                        key = { "plan-${it.plan.id}" },
+                    ) { upcoming ->
+                        UpcomingPlanCard(
+                            upcoming = upcoming,
+                            onClick = { onPlanClick(upcoming.plan.itemId) },
+                        )
                     }
                 }
 
                 if (state.nearestGoals.isNotEmpty()) {
-                    item { SectionHeader("Nearest goals") }
-                    items(items = state.nearestGoals, key = { "nearest-${it.item.id}" }) { entry ->
-                        NearestGoalCard(
-                            entry = entry,
-                            onClick = { onItemClick(entry.item.id) },
+                    item { SectionHeader(title = strings.closestGoals) }
+                    item {
+                        NearestGoalsRow(
+                            goals = state.nearestGoals,
+                            onItemClick = onItemClick,
                         )
                     }
                 }
 
                 item {
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    Text(
-                        text = "All items",
-                        style = MaterialTheme.typography.titleLarge,
+                    SectionHeader(
+                        title = strings.allItems,
+                        action = { CountBadge(state.summary.activeItemCount) },
                     )
                 }
 
@@ -117,11 +149,16 @@ fun HomeScreen(
                         value = state.query,
                         onValueChange = viewModel::onQueryChange,
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Search items") },
+                        placeholder = { Text(strings.searchItems) },
                         leadingIcon = {
                             Icon(imageVector = Icons.Outlined.Search, contentDescription = null)
                         },
                         singleLine = true,
+                        shape = RoundedCornerShape(20.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                        ),
                     )
                 }
 
@@ -130,12 +167,12 @@ fun HomeScreen(
                         FilterChip(
                             selected = state.sort == ItemSort.RECENT,
                             onClick = { viewModel.onSortChange(ItemSort.RECENT) },
-                            label = { Text("Recent") },
+                            label = { Text(strings.sortRecent) },
                         )
                         FilterChip(
                             selected = state.sort == ItemSort.NAME,
                             onClick = { viewModel.onSortChange(ItemSort.NAME) },
-                            label = { Text("Name") },
+                            label = { Text(strings.sortName) },
                         )
                     }
                 }
@@ -144,14 +181,14 @@ fun HomeScreen(
                     item {
                         EmptyState(
                             title = if (state.query.isBlank()) {
-                                "No items yet"
+                                strings.noItemsYet
                             } else {
-                                "No matching items"
+                                strings.noMatchingItems
                             },
                             message = if (state.query.isBlank()) {
-                                "Tap + to add your first wishlist item."
+                                strings.noItemsMessage
                             } else {
-                                "Try a different search."
+                                strings.noMatchingMessage
                             },
                         )
                     }
@@ -172,84 +209,125 @@ fun HomeScreen(
             onClick = onAddItem,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(16.dp),
+                .padding(20.dp),
+            shape = RoundedCornerShape(20.dp),
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         ) {
-            Icon(imageVector = Icons.Filled.Add, contentDescription = "Add item")
+            Icon(imageVector = Icons.Filled.Add, contentDescription = strings.addItemDescription)
         }
     }
 }
 
 @Composable
-private fun DashboardSummaryCard(
+private fun OverviewCard(
     summary: DashboardSummary,
     onOpenArchive: () -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    val strings = LocalAppStrings.current
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Top,
             ) {
-                Text(
-                    text = "Overview",
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                TextButton(onClick = onOpenArchive) {
-                    Text("Purchased archive")
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = strings.totalSaved,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.72f),
+                    )
+                    Text(
+                        text = formatIdr(summary.totalAvailableIdr),
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                }
+                TextButton(
+                    onClick = onOpenArchive,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    ),
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Archive,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(strings.archiveShort)
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                SummaryMetric(
-                    label = "Active items",
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                LinearProgressIndicator(
+                    progress = { summary.overallProgress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(10.dp)
+                        .clip(CircleShape),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.18f),
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        text = progressLabel(summary, strings),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                    Text(
+                        text = strings.overallProgress,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.72f),
+                    )
+                }
+            }
+
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.16f),
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                OverviewMetric(
+                    label = strings.activeItems,
                     value = summary.activeItemCount.toString(),
                     modifier = Modifier.weight(1f),
                 )
-                SummaryMetric(
-                    label = "Total target",
+                OverviewMetric(
+                    label = strings.totalTarget,
                     value = formatIdr(summary.totalTargetIdr),
                     modifier = Modifier.weight(1f),
                 )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                SummaryMetric(
-                    label = "Total saved",
-                    value = formatIdr(summary.totalAvailableIdr),
-                    modifier = Modifier.weight(1f),
-                )
-                SummaryMetric(
-                    label = "Fully funded",
+                OverviewMetric(
+                    label = strings.fullyFundedLabel,
                     value = "${summary.fullyFundedCount}/${summary.activeItemCount}",
                     modifier = Modifier.weight(1f),
                 )
             }
-
-            LinearProgressIndicator(
-                progress = { summary.overallProgress },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp),
-            )
-            Text(
-                text = when {
-                    summary.activeItemCount == 0 -> "No active items yet"
-                    summary.totalTargetIdr == 0L -> "No target amounts; all goals are satisfied"
-                    summary.overallProgress >= 1f -> "All active goals funded"
-                    else -> "${(summary.overallProgress * 100).roundToInt()}% of active targets funded"
-                },
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
     }
 }
 
 @Composable
-private fun SummaryMetric(
+private fun OverviewMetric(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
@@ -257,82 +335,260 @@ private fun SummaryMetric(
     Column(modifier = modifier) {
         Text(
             text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.72f),
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyLarge,
-            maxLines = 1,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
         )
     }
 }
 
 @Composable
-private fun SectionHeader(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleLarge,
-        modifier = Modifier.padding(top = 4.dp),
-    )
+private fun SectionHeader(
+    title: String,
+    action: (@Composable () -> Unit)? = null,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+        )
+        action?.invoke()
+    }
 }
 
 @Composable
-private fun UpcomingPlanCard(upcoming: DashboardUpcomingPlan) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(
-                text = upcoming.itemName,
-                style = MaterialTheme.typography.titleSmall,
-            )
-            Text(
-                text = "${formatPlanFrequency(upcoming.plan.frequency)} • " +
-                    formatIdr(upcoming.plan.contributionIdr),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            val projection = upcoming.projection
-            when {
-                projection == null -> {
-                    Text(
-                        text = "No estimate available.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+private fun CountBadge(count: Int) {
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+    ) {
+        Text(
+            text = count.toString(),
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+        )
+    }
+}
 
-                projection.isGoalReached -> {
-                    Text(
-                        text = "Goal reached",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
-
-                projection.completionDate == null -> {
-                    Text(
-                        text = "Projected date is too far in the future.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-
-                else -> {
-                    Text(
-                        text = "${projection.requiredContributions} contributions • " +
-                            "est. ${formatDate(projection.completionDate)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
+@Composable
+private fun RecentActivityCard(activities: List<DashboardActivity>) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        Column {
+            activities.forEachIndexed { index, activity ->
+                HomeActivityRow(activity = activity)
+                if (index < activities.lastIndex) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = 56.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant,
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun HomeActivityRow(activity: DashboardActivity) {
+    val strings = LocalAppStrings.current
+    val event = activity.event
+    val isDeposit = event.type == SavingsEventType.DEPOSIT
+    val containerColor = if (isDeposit) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        MaterialTheme.colorScheme.errorContainer
+    }
+    val contentColor = if (isDeposit) {
+        MaterialTheme.colorScheme.onPrimaryContainer
+    } else {
+        MaterialTheme.colorScheme.onErrorContainer
+    }
+    val amountColor = if (isDeposit) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.error
+    }
+    val label = if (isDeposit) strings.deposit else strings.withdrawal
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 64.dp)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = containerColor,
+            contentColor = contentColor,
+        ) {
+            Icon(
+                imageVector = if (isDeposit) Icons.Filled.Add else Icons.Filled.Remove,
+                contentDescription = null,
+                modifier = Modifier
+                    .padding(10.dp)
+                    .size(20.dp),
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "Planned, not paid",
+                text = activity.itemName,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = "$label · ${formatShortDate(event.createdAt, strings.locale)}",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = "${if (isDeposit) "+" else "-"}${formatIdr(event.amountIdr)}",
+            style = MaterialTheme.typography.titleSmall,
+            color = amountColor,
+        )
+    }
+}
+
+@Composable
+private fun UpcomingPlanCard(
+    upcoming: DashboardUpcomingPlan,
+    onClick: () -> Unit,
+) {
+    val strings = LocalAppStrings.current
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Schedule,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .padding(12.dp)
+                        .size(24.dp),
+                )
+            }
+            Spacer(modifier = Modifier.width(14.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                Text(
+                    text = upcoming.itemName,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = "${formatIdr(upcoming.plan.contributionIdr)} " +
+                        strings.planFrequency(upcoming.plan.frequency).lowercase(),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                val projection = upcoming.projection
+                when {
+                    projection == null -> {
+                        Text(
+                            text = strings.noEstimateAvailable,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                    projection.isGoalReached -> {
+                        Text(
+                            text = strings.goalReached,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.tertiary,
+                        )
+                    }
+
+                    projection.completionDate == null -> {
+                        Text(
+                            text = strings.dateTooFar,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+
+                    else -> {
+                        Text(
+                            text = strings.contributionsEstimate(
+                                projection.requiredContributions,
+                                formatDate(projection.completionDate, strings.locale),
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            text = strings.remainingLabel(formatIdr(projection.remainingIdr)),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                Text(
+                    text = strings.plannedNotPaid,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun NearestGoalsRow(
+    goals: List<WishlistItemWithSavings>,
+    onItemClick: (UUID) -> Unit,
+) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        items(items = goals, key = { "nearest-${it.item.id}" }) { entry ->
+            NearestGoalCard(
+                entry = entry,
+                onClick = { onItemClick(entry.item.id) },
             )
         }
     }
@@ -343,34 +599,62 @@ private fun NearestGoalCard(
     entry: WishlistItemWithSavings,
     onClick: () -> Unit,
 ) {
+    val strings = LocalAppStrings.current
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.width(260.dp),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
                 text = entry.item.name,
                 style = MaterialTheme.typography.titleSmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = "${formatIdr(entry.savings.availableIdr)} of " +
-                    formatIdr(entry.item.targetPriceIdr),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                text = strings.amountLeft(formatIdr(entry.savings.remainingIdr)),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
             )
             LinearProgressIndicator(
                 progress = { entry.savings.progress },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(6.dp),
+                    .height(8.dp)
+                    .clip(CircleShape),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
             )
-            Text(
-                text = "${formatIdr(entry.savings.remainingIdr)} remaining",
-                style = MaterialTheme.typography.labelSmall,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = strings.percentageSaved((entry.savings.progress * 100).roundToInt()),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = formatIdr(entry.savings.availableIdr),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
+}
+
+private fun progressLabel(summary: DashboardSummary, strings: id.my.f1zz.whenyah.domain.i18n.AppStrings): String = when {
+    summary.activeItemCount == 0 -> strings.noActiveItemsYet
+    summary.totalTargetIdr == 0L -> strings.noTargetAmountSet
+    summary.overallProgress >= 1f -> strings.allActiveGoalsFunded
+    else -> strings.percentageFunded((summary.overallProgress * 100).roundToInt())
 }

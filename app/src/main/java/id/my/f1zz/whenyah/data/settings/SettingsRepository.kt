@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
+import id.my.f1zz.whenyah.domain.i18n.AppLanguage
 import id.my.f1zz.whenyah.domain.settings.AccentColor
 import id.my.f1zz.whenyah.domain.settings.AppSettings
 import id.my.f1zz.whenyah.domain.settings.SummaryCadence
@@ -36,6 +37,9 @@ class SettingsRepository @Inject constructor(
         }
         .map { preferences ->
             AppSettings(
+                language = preferences[Keys.LANGUAGE]
+                    ?.let { value -> runCatching { AppLanguage.valueOf(value) }.getOrNull() }
+                    ?: AppLanguage.ENGLISH,
                 themeMode = preferences[Keys.THEME_MODE]
                     ?.let { value -> runCatching { ThemeMode.valueOf(value) }.getOrNull() }
                     ?: ThemeMode.SYSTEM,
@@ -58,6 +62,7 @@ class SettingsRepository @Inject constructor(
 
     suspend fun replaceSettings(settings: AppSettings) {
         context.settingsDataStore.edit { preferences ->
+            preferences[Keys.LANGUAGE] = settings.language.name
             preferences[Keys.THEME_MODE] = settings.themeMode.name
             preferences[Keys.ACCENT_COLOR] = settings.accentColor.name
             preferences[Keys.USE_DYNAMIC_COLOR] = settings.useDynamicColor
@@ -66,6 +71,10 @@ class SettingsRepository @Inject constructor(
             preferences[Keys.SUMMARY_CADENCE] = settings.summaryCadence.name
             preferences[Keys.SUMMARY_TIME] = settings.summaryTime.toString()
         }
+    }
+
+    suspend fun setLanguage(value: AppLanguage) {
+        context.settingsDataStore.edit { it[Keys.LANGUAGE] = value.name }
     }
 
     suspend fun setThemeMode(value: ThemeMode) {
@@ -97,6 +106,7 @@ class SettingsRepository @Inject constructor(
     }
 
     private object Keys {
+        val LANGUAGE = stringPreferencesKey("language")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val ACCENT_COLOR = stringPreferencesKey("accent_color")
         val USE_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")

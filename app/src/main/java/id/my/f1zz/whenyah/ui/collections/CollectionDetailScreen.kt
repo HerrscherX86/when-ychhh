@@ -25,6 +25,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import id.my.f1zz.whenyah.ui.components.EmptyState
 import id.my.f1zz.whenyah.ui.components.ItemCard
+import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
 import java.util.UUID
 
 @Composable
@@ -35,6 +36,7 @@ fun CollectionDetailScreen(
     viewModel: CollectionDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val strings = LocalAppStrings.current
     val collection = state.collection
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -48,8 +50,8 @@ fun CollectionDetailScreen(
             collection == null -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     EmptyState(
-                        title = "Collection not found",
-                        message = "It may have been deleted.",
+                        title = strings.collectionNotFound,
+                        message = strings.itemMayBeDeleted,
                     )
                 }
             }
@@ -61,9 +63,8 @@ fun CollectionDetailScreen(
                             text = collection.name,
                             style = MaterialTheme.typography.headlineSmall,
                         )
-                        val count = state.items.size
                         Text(
-                            text = "$count item${if (count == 1) "" else "s"}",
+                            text = strings.itemCount(state.items.size),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -77,8 +78,8 @@ fun CollectionDetailScreen(
                             contentAlignment = Alignment.Center,
                         ) {
                             EmptyState(
-                                title = "No items in this collection",
-                                message = "Add an item to start this collection.",
+                                title = strings.noItemsInCollection,
+                                message = strings.noItemsInCollectionMessage,
                             )
                         }
                     } else {
@@ -113,7 +114,7 @@ fun CollectionDetailScreen(
                         .align(Alignment.BottomEnd)
                         .padding(16.dp),
                 ) {
-                    Icon(imageVector = Icons.Filled.Add, contentDescription = "Add item")
+                    Icon(imageVector = Icons.Filled.Add, contentDescription = strings.addItemDescription)
                 }
             }
         }

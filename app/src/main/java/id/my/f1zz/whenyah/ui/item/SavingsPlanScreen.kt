@@ -44,9 +44,9 @@ import id.my.f1zz.whenyah.domain.model.PlanFrequency
 import id.my.f1zz.whenyah.domain.plan.SavingsPlanProjection
 import id.my.f1zz.whenyah.ui.components.ConfirmDeleteDialog
 import id.my.f1zz.whenyah.ui.components.EmptyState
+import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
 import id.my.f1zz.whenyah.ui.util.formatDate
 import id.my.f1zz.whenyah.ui.util.formatIdr
-import id.my.f1zz.whenyah.ui.util.formatPlanFrequency
 import id.my.f1zz.whenyah.ui.util.formatTime
 import java.time.LocalTime
 
@@ -57,6 +57,7 @@ fun SavingsPlanScreen(
     viewModel: SavingsPlanViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val strings = LocalAppStrings.current
     val context = LocalContext.current
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -75,8 +76,8 @@ fun SavingsPlanScreen(
     if (item == null) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             EmptyState(
-                title = "Item not found",
-                message = "It may have been deleted.",
+                title = strings.itemNotFound,
+                message = strings.itemMayBeDeleted,
             )
         }
         return
@@ -95,7 +96,10 @@ fun SavingsPlanScreen(
             style = MaterialTheme.typography.headlineSmall,
         )
         Text(
-            text = "Target ${formatIdr(item.targetPriceIdr)} • Saved ${formatIdr(state.availableIdr)}",
+            text = strings.targetAndSaved(
+                formatIdr(item.targetPriceIdr),
+                formatIdr(state.availableIdr),
+            ),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -104,14 +108,14 @@ fun SavingsPlanScreen(
             value = state.contribution,
             onValueChange = viewModel::onContributionChange,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Contribution amount (IDR)") },
+            label = { Text(strings.contributionAmountIdr) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             isError = state.error != null,
         )
 
         Text(
-            text = "Frequency",
+            text = strings.frequency,
             style = MaterialTheme.typography.labelLarge,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -119,7 +123,7 @@ fun SavingsPlanScreen(
                 FilterChip(
                     selected = state.frequency == frequency,
                     onClick = { viewModel.onFrequencyChange(frequency) },
-                    label = { Text(formatPlanFrequency(frequency)) },
+                    label = { Text(strings.planFrequency(frequency)) },
                 )
             }
         }
@@ -131,11 +135,11 @@ fun SavingsPlanScreen(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Contribution reminder",
+                    text = strings.contributionReminder,
                     style = MaterialTheme.typography.titleSmall,
                 )
                 Text(
-                    text = "Best-effort reminder. Requires notification permission.",
+                    text = strings.reminderHelp,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -161,7 +165,7 @@ fun SavingsPlanScreen(
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Reminder time: ${formatTime(state.reminderLocalTime)}")
+                Text(strings.reminderTimeLabel(formatTime(state.reminderLocalTime)))
             }
         }
 
@@ -187,18 +191,18 @@ fun SavingsPlanScreen(
                     color = MaterialTheme.colorScheme.onPrimary,
                 )
             } else {
-                Text(if (state.plan == null) "Create plan" else "Update plan")
+                Text(if (state.plan == null) strings.createPlan else strings.updatePlan)
             }
         }
 
         state.plan?.let { plan ->
             HorizontalDivider()
             Text(
-                text = "Plan status",
+                text = strings.planStatus,
                 style = MaterialTheme.typography.titleMedium,
             )
             Text(
-                text = if (plan.active) "Active" else "Paused",
+                text = if (plan.active) strings.active else strings.paused,
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (plan.active) {
                     MaterialTheme.colorScheme.primary
@@ -210,7 +214,7 @@ fun SavingsPlanScreen(
                 onClick = viewModel::togglePlanActive,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(if (plan.active) "Pause plan" else "Resume plan")
+                Text(if (plan.active) strings.pausePlan else strings.resumePlan)
             }
             TextButton(
                 onClick = { showDeleteDialog = true },
@@ -219,7 +223,7 @@ fun SavingsPlanScreen(
                     contentColor = MaterialTheme.colorScheme.error,
                 ),
             ) {
-                Text("Delete plan")
+                Text(strings.deletePlan)
             }
         }
 
@@ -228,8 +232,8 @@ fun SavingsPlanScreen(
 
     if (showDeleteDialog) {
         ConfirmDeleteDialog(
-            title = "Delete savings plan?",
-            message = "The saved contributions stay in the ledger. Only the plan and its estimate are removed.",
+            title = strings.deletePlanTitle,
+            message = strings.deletePlanMessage,
             onConfirm = {
                 showDeleteDialog = false
                 viewModel.deletePlan()
@@ -241,20 +245,21 @@ fun SavingsPlanScreen(
 
 @Composable
 private fun ProjectionCard(projection: SavingsPlanProjection?) {
+    val strings = LocalAppStrings.current
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
-                text = "Projection",
+                text = strings.projection,
                 style = MaterialTheme.typography.titleMedium,
             )
 
             when {
                 projection == null -> {
                     Text(
-                        text = "Enter a contribution amount to see an estimate.",
+                        text = strings.enterContributionEstimate,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -262,48 +267,47 @@ private fun ProjectionCard(projection: SavingsPlanProjection?) {
 
                 projection.isGoalReached -> {
                     Text(
-                        text = "Goal reached",
+                        text = strings.goalReached,
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.primary,
                     )
                     projection.completionDate?.let { date ->
                         Text(
-                            text = "Completion date: ${formatDate(date)}",
+                            text = strings.completionDateLabel(
+                                formatDate(date, strings.locale)
+                            ),
                             style = MaterialTheme.typography.bodyMedium,
                         )
                     }
                 }
 
                 else -> {
-                    val contributionLabel = if (projection.requiredContributions == 1L) {
-                        "1 planned contribution"
-                    } else {
-                        "${projection.requiredContributions} planned contributions"
-                    }
                     Text(
-                        text = contributionLabel,
+                        text = strings.contributionCount(projection.requiredContributions),
                         style = MaterialTheme.typography.titleSmall,
                     )
                     Text(
-                        text = "Remaining: ${formatIdr(projection.remainingIdr)}",
+                        text = strings.remainingValue(formatIdr(projection.remainingIdr)),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     val completionDate = projection.completionDate
                     if (completionDate == null) {
                         Text(
-                            text = "The projected date is too far in the future.",
+                            text = strings.dateTooFar,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
                         )
                     } else {
                         Text(
-                            text = "Estimated completion: ${formatDate(completionDate)}",
+                            text = strings.estimatedCompletionLabel(
+                                formatDate(completionDate, strings.locale)
+                            ),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary,
                         )
                     }
                     Text(
-                        text = "Estimate assumes contributions beginning today and continuing on schedule.",
+                        text = strings.estimateAssumes,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
