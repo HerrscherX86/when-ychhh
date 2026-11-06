@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Query
 import androidx.room.Upsert
 import id.my.f1zz.whenyah.data.local.entity.CollectionEntity
+import id.my.f1zz.whenyah.data.local.model.CollectionWithItemCount
 import kotlinx.coroutines.flow.Flow
 import java.util.UUID
 
@@ -12,6 +13,22 @@ import java.util.UUID
 interface CollectionDao {
     @Query("SELECT * FROM collections ORDER BY name COLLATE NOCASE ASC")
     fun observeAll(): Flow<List<CollectionEntity>>
+
+    @Query(
+        """
+        SELECT collections.*, COUNT(wishlist_items.id) AS itemCount
+        FROM collections
+        LEFT JOIN wishlist_items
+            ON wishlist_items.collectionId = collections.id
+            AND wishlist_items.status = 'ACTIVE'
+        GROUP BY collections.id
+        ORDER BY collections.name COLLATE NOCASE ASC
+        """
+    )
+    fun observeAllWithItemCount(): Flow<List<CollectionWithItemCount>>
+
+    @Query("SELECT * FROM collections WHERE id = :id LIMIT 1")
+    fun observeById(id: UUID): Flow<CollectionEntity?>
 
     @Query("SELECT * FROM collections WHERE id = :id LIMIT 1")
     suspend fun findById(id: UUID): CollectionEntity?

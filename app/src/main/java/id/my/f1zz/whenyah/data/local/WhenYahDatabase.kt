@@ -4,6 +4,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import id.my.f1zz.whenyah.data.local.dao.CollectionDao
+import id.my.f1zz.whenyah.data.local.dao.WishlistItemDao
 import id.my.f1zz.whenyah.data.local.entity.CollectionEntity
 import id.my.f1zz.whenyah.data.local.entity.PurchaseRecordEntity
 import id.my.f1zz.whenyah.data.local.entity.SavingsEventEntity
@@ -24,6 +25,7 @@ import id.my.f1zz.whenyah.data.local.entity.WishlistItemEntity
 @TypeConverters(Converters::class)
 abstract class WhenYahDatabase : RoomDatabase() {
     abstract fun collectionDao(): CollectionDao
+    abstract fun wishlistItemDao(): WishlistItemDao
 
     companion object {
         const val NAME = "whenyah.db"
