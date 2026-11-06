@@ -1,0 +1,33 @@
+# Gradle
+.gradle/
+build/
+.kotlin/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+captures/
+.navigation/
+
+# Android / local configuration
+local.properties
+keystore.properties
+*.jks
+*.keystore
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Logs and crash dumps
+*.log
+*.hprof
+
+# OS files
+.DS_Store
+Thumbs.db
