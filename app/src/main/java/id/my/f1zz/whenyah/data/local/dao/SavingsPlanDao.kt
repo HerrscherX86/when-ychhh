@@ -15,6 +15,9 @@ interface SavingsPlanDao {
     @Query("SELECT * FROM savings_plans WHERE itemId = :itemId LIMIT 1")
     suspend fun getByItem(itemId: UUID): SavingsPlanEntity?
 
+    @Query("SELECT * FROM savings_plans WHERE active = 1")
+    fun observeActivePlans(): Flow<List<SavingsPlanEntity>>
+
     @Upsert
     suspend fun upsert(plan: SavingsPlanEntity)
 

@@ -27,6 +27,7 @@ import id.my.f1zz.whenyah.ui.util.formatIdr
 fun SavingsEventRow(
     event: SavingsEventEntity,
     modifier: Modifier = Modifier,
+    itemName: String? = null,
 ) {
     val isDeposit = event.type == SavingsEventType.DEPOSIT
     val label = when (event.type) {
@@ -58,10 +59,22 @@ fun SavingsEventRow(
         )
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.titleSmall,
-            )
+            if (itemName != null) {
+                Text(
+                    text = itemName,
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = amountColor,
+                )
+            } else {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.titleSmall,
+                )
+            }
             if (!event.note.isNullOrBlank()) {
                 Text(
                     text = event.note,

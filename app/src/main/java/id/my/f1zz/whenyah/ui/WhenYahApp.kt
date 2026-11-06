@@ -24,6 +24,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import id.my.f1zz.whenyah.navigation.Routes
 import id.my.f1zz.whenyah.navigation.TopLevelDestination
+import id.my.f1zz.whenyah.ui.archive.ArchiveScreen
+import id.my.f1zz.whenyah.ui.archive.ArchivedItemDetailScreen
 import id.my.f1zz.whenyah.ui.collections.CollectionDetailScreen
 import id.my.f1zz.whenyah.ui.collections.CollectionsScreen
 import id.my.f1zz.whenyah.ui.home.HomeScreen
@@ -53,6 +55,8 @@ fun WhenYahApp() {
         Routes.ITEM_ADD -> "Add item"
         Routes.ITEM_EDIT -> "Edit item"
         Routes.COLLECTION_DETAIL -> "Collection"
+        Routes.ARCHIVE -> "Purchased archive"
+        Routes.ARCHIVE_DETAIL -> "Archived item"
         else -> currentTopLevelDestination?.label ?: "When Yah"
     }
 
@@ -108,6 +112,7 @@ fun WhenYahApp() {
                     onItemClick = { itemId ->
                         navController.navigate(Routes.itemDetail(itemId))
                     },
+                    onOpenArchive = { navController.navigate(Routes.ARCHIVE) },
                 )
             }
             composable(TopLevelDestination.COLLECTIONS.route) {
@@ -154,6 +159,16 @@ fun WhenYahApp() {
                     onViewHistory = {
                         navController.navigate(Routes.itemHistory(UUID.fromString(itemId)))
                     },
+                    onPurchased = {
+                        val detailDestinationId = navController.currentDestination?.id
+                        if (detailDestinationId != null) {
+                            navController.navigate(Routes.archiveDetail(UUID.fromString(itemId))) {
+                                popUpTo(detailDestinationId) { inclusive = true }
+                            }
+                        } else {
+                            navController.navigate(Routes.archiveDetail(UUID.fromString(itemId)))
+                        }
+                    },
                     onBack = { navController.popBackStack() },
                 )
             }
@@ -174,6 +189,25 @@ fun WhenYahApp() {
                 ),
             ) {
                 SavingsPlanScreen(
+                    onFinished = { navController.popBackStack() },
+                )
+            }
+
+            composable(Routes.ARCHIVE) {
+                ArchiveScreen(
+                    onItemClick = { itemId ->
+                        navController.navigate(Routes.archiveDetail(itemId))
+                    },
+                )
+            }
+
+            composable(
+                route = Routes.ARCHIVE_DETAIL,
+                arguments = listOf(
+                    navArgument("itemId") { type = NavType.StringType },
+                ),
+            ) {
+                ArchivedItemDetailScreen(
                     onFinished = { navController.popBackStack() },
                 )
             }

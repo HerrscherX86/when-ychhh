@@ -10,6 +10,9 @@ object Routes {
     const val ITEM_ADD = "add-item?collectionId={collectionId}"
     const val ITEM_EDIT = "edit-item/{itemId}"
 
+    const val ARCHIVE = "archive"
+    const val ARCHIVE_DETAIL = "archive/{itemId}"
+
     fun collectionDetail(collectionId: UUID): String = "collection/$collectionId"
 
     fun itemDetail(itemId: UUID): String = "item/$itemId"
@@ -22,4 +25,6 @@ object Routes {
         if (collectionId == null) "add-item" else "add-item?collectionId=$collectionId"
 
     fun itemEdit(itemId: UUID): String = "edit-item/$itemId"
+
+    fun archiveDetail(itemId: UUID): String = "archive/$itemId"
 }

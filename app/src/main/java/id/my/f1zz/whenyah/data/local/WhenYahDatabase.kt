@@ -4,6 +4,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import id.my.f1zz.whenyah.data.local.dao.CollectionDao
+import id.my.f1zz.whenyah.data.local.dao.PurchaseRecordDao
 import id.my.f1zz.whenyah.data.local.dao.SavingsEventDao
 import id.my.f1zz.whenyah.data.local.dao.SavingsPlanDao
 import id.my.f1zz.whenyah.data.local.dao.WishlistItemDao
@@ -30,6 +31,7 @@ abstract class WhenYahDatabase : RoomDatabase() {
     abstract fun wishlistItemDao(): WishlistItemDao
     abstract fun savingsEventDao(): SavingsEventDao
     abstract fun savingsPlanDao(): SavingsPlanDao
+    abstract fun purchaseRecordDao(): PurchaseRecordDao
 
     companion object {
         const val NAME = "whenyah.db"

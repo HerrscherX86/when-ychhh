@@ -15,6 +15,15 @@ interface WishlistItemDao {
     @Query(
         """
         SELECT * FROM wishlist_items
+        WHERE status = 'PURCHASED'
+        ORDER BY purchasedAt DESC, updatedAt DESC
+        """
+    )
+    fun observePurchased(): Flow<List<WishlistItemEntity>>
+
+    @Query(
+        """
+        SELECT * FROM wishlist_items
         WHERE status = 'ACTIVE' AND collectionId = :collectionId
         ORDER BY updatedAt DESC
         """

@@ -16,6 +16,9 @@ class SavingsPlanRepository @Inject constructor(
     fun observePlan(itemId: UUID): Flow<SavingsPlanEntity?> =
         savingsPlanDao.observeByItem(itemId)
 
+    fun observeActivePlans(): Flow<List<SavingsPlanEntity>> =
+        savingsPlanDao.observeActivePlans()
+
     suspend fun getPlan(itemId: UUID): SavingsPlanEntity? =
         savingsPlanDao.getByItem(itemId)
 

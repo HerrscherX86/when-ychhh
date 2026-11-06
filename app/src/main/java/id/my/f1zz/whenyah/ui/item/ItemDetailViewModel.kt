@@ -7,9 +7,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import id.my.f1zz.whenyah.data.local.entity.SavingsEventEntity
 import id.my.f1zz.whenyah.data.local.entity.SavingsPlanEntity
 import id.my.f1zz.whenyah.data.local.entity.WishlistItemEntity
+import id.my.f1zz.whenyah.data.repository.PurchaseRepository
 import id.my.f1zz.whenyah.data.repository.SavingsPlanRepository
 import id.my.f1zz.whenyah.data.repository.SavingsRepository
 import id.my.f1zz.whenyah.data.repository.WishlistRepository
+import id.my.f1zz.whenyah.domain.model.ItemStatus
 import id.my.f1zz.whenyah.domain.plan.SavingsPlanCalculator
 import id.my.f1zz.whenyah.domain.plan.SavingsPlanProjection
 import id.my.f1zz.whenyah.domain.plan.observeToday
@@ -46,12 +48,19 @@ data class TransactionFormState(
     val error: String? = null,
 )
 
+data class PurchaseUiState(
+    val isPurchasing: Boolean = false,
+    val error: String? = null,
+    val purchased: Boolean = false,
+)
+
 @HiltViewModel
 class ItemDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: WishlistRepository,
     private val savingsRepository: SavingsRepository,
     private val savingsPlanRepository: SavingsPlanRepository,
+    private val purchaseRepository: PurchaseRepository,
 ) : ViewModel() {
     private val itemId = UUID.fromString(
         checkNotNull(savedStateHandle.get<String>("itemId")) {
@@ -103,6 +112,9 @@ class ItemDetailViewModel @Inject constructor(
 
     private val _transactionForm = MutableStateFlow(TransactionFormState())
     val transactionForm: StateFlow<TransactionFormState> = _transactionForm.asStateFlow()
+
+    private val _purchaseState = MutableStateFlow(PurchaseUiState())
+    val purchaseState: StateFlow<PurchaseUiState> = _purchaseState.asStateFlow()
 
     private val _deleted = MutableStateFlow(false)
     val deleted: StateFlow<Boolean> = _deleted.asStateFlow()
@@ -178,6 +190,35 @@ class ItemDetailViewModel @Inject constructor(
                 },
             )
         }
+    }
+
+    fun purchaseItem() {
+        val item = uiState.value.item ?: return
+        if (item.status != ItemStatus.ACTIVE || _purchaseState.value.isPurchasing) return
+
+        _purchaseState.update { it.copy(isPurchasing = true, error = null) }
+
+        viewModelScope.launch {
+            purchaseRepository.purchaseItem(itemId).fold(
+                onSuccess = {
+                    _purchaseState.update {
+                        it.copy(isPurchasing = false, purchased = true)
+                    }
+                },
+                onFailure = { failure ->
+                    _purchaseState.update {
+                        it.copy(
+                            isPurchasing = false,
+                            error = failure.message ?: "Could not mark the item purchased",
+                        )
+                    }
+                },
+            )
+        }
+    }
+
+    fun clearPurchaseError() {
+        _purchaseState.update { it.copy(error = null) }
     }
 
     fun deleteItem() {

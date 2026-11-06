@@ -9,6 +9,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import id.my.f1zz.whenyah.data.local.WhenYahDatabase
 import id.my.f1zz.whenyah.data.local.dao.CollectionDao
+import id.my.f1zz.whenyah.data.local.dao.PurchaseRecordDao
 import id.my.f1zz.whenyah.data.local.dao.SavingsEventDao
 import id.my.f1zz.whenyah.data.local.dao.SavingsPlanDao
 import id.my.f1zz.whenyah.data.local.dao.WishlistItemDao
@@ -37,4 +38,8 @@ object DatabaseModule {
     @Provides
     fun provideSavingsPlanDao(database: WhenYahDatabase): SavingsPlanDao =
         database.savingsPlanDao()
+
+    @Provides
+    fun providePurchaseRecordDao(database: WhenYahDatabase): PurchaseRecordDao =
+        database.purchaseRecordDao()
 }

@@ -46,6 +46,7 @@ import id.my.f1zz.whenyah.domain.validation.ItemValidation
 import id.my.f1zz.whenyah.ui.components.ConfirmDeleteDialog
 import id.my.f1zz.whenyah.ui.components.EmptyState
 import id.my.f1zz.whenyah.ui.components.ItemImage
+import id.my.f1zz.whenyah.ui.components.MarkPurchasedDialog
 import id.my.f1zz.whenyah.ui.components.SavingsEventRow
 import id.my.f1zz.whenyah.ui.components.TransactionDialog
 import id.my.f1zz.whenyah.ui.util.formatDate
@@ -59,20 +60,27 @@ fun ItemDetailScreen(
     onEdit: () -> Unit,
     onEditPlan: () -> Unit,
     onViewHistory: () -> Unit,
+    onPurchased: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ItemDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val transactionForm by viewModel.transactionForm.collectAsStateWithLifecycle()
+    val purchaseState by viewModel.purchaseState.collectAsStateWithLifecycle()
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
+    var showPurchaseDialog by rememberSaveable { mutableStateOf(false) }
     var urlError by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val item = state.item
 
     LaunchedEffect(deleted) {
         if (deleted) onBack()
+    }
+
+    LaunchedEffect(purchaseState.purchased) {
+        if (purchaseState.purchased) onPurchased()
     }
 
     when {
@@ -132,6 +140,16 @@ fun ItemDetailScreen(
                     projection = state.planProjection,
                     onEditPlan = onEditPlan,
                 )
+
+                Button(
+                    onClick = {
+                        viewModel.clearPurchaseError()
+                        showPurchaseDialog = true
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Mark purchased")
+                }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Button(onClick = onEdit, modifier = Modifier.weight(1f)) {
@@ -248,6 +266,23 @@ fun ItemDetailScreen(
             onNoteChange = viewModel::onTransactionNoteChange,
             onDismiss = viewModel::dismissTransaction,
             onSubmit = viewModel::submitTransaction,
+        )
+    }
+
+    if (showPurchaseDialog && item != null) {
+        MarkPurchasedDialog(
+            itemName = item.name,
+            targetPriceIdr = item.targetPriceIdr,
+            savedIdr = state.savings.availableIdr,
+            isPurchasing = purchaseState.isPurchasing,
+            error = purchaseState.error,
+            onConfirm = viewModel::purchaseItem,
+            onDismiss = {
+                if (!purchaseState.isPurchasing) {
+                    showPurchaseDialog = false
+                    viewModel.clearPurchaseError()
+                }
+            },
         )
     }
 }
