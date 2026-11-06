@@ -7,50 +7,73 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import id.my.f1zz.whenyah.domain.settings.AccentColor
+import id.my.f1zz.whenyah.domain.settings.ThemeMode
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
-)
+private val AccentBlueLight = Color(0xFF1565C0)
+private val AccentBlueDark = Color(0xFF90CAF9)
+private val AccentGreenLight = Color(0xFF2E7D32)
+private val AccentGreenDark = Color(0xFFA5D6A7)
+private val AccentAmberLight = Color(0xFF8D6E00)
+private val AccentAmberDark = Color(0xFFFFD54F)
+private val AccentRoseLight = Color(0xFF9C3D6B)
+private val AccentRoseDark = Color(0xFFF48FB1)
 
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+private fun accentPrimary(accentColor: AccentColor, darkTheme: Boolean): Color =
+    when (accentColor) {
+        AccentColor.DEFAULT -> if (darkTheme) Purple80 else Purple40
+        AccentColor.BLUE -> if (darkTheme) AccentBlueDark else AccentBlueLight
+        AccentColor.GREEN -> if (darkTheme) AccentGreenDark else AccentGreenLight
+        AccentColor.AMBER -> if (darkTheme) AccentAmberDark else AccentAmberLight
+        AccentColor.ROSE -> if (darkTheme) AccentRoseDark else AccentRoseLight
+    }
 
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
-)
+private fun colorSchemeFor(accentColor: AccentColor, darkTheme: Boolean) =
+    if (darkTheme) {
+        darkColorScheme(
+            primary = accentPrimary(accentColor, darkTheme = true),
+            secondary = PurpleGrey80,
+            tertiary = Pink80,
+        )
+    } else {
+        lightColorScheme(
+            primary = accentPrimary(accentColor, darkTheme = false),
+            secondary = PurpleGrey40,
+            tertiary = Pink40,
+        )
+    }
 
 @Composable
 fun WhenYahTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
+    themeMode: ThemeMode = ThemeMode.SYSTEM,
+    accentColor: AccentColor = AccentColor.DEFAULT,
     dynamicColor: Boolean = true,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
+    val darkTheme = when (themeMode) {
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    }
+
     val colorScheme = when {
         dynamicColor -> {
             val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            if (darkTheme) {
+                dynamicDarkColorScheme(context)
+            } else {
+                dynamicLightColorScheme(context)
+            }
         }
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        else -> colorSchemeFor(accentColor, darkTheme)
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
-        content = content
+        content = content,
     )
 }

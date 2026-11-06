@@ -7,6 +7,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import id.my.f1zz.whenyah.data.local.entity.SavingsEventEntity
 import id.my.f1zz.whenyah.data.local.entity.SavingsPlanEntity
 import id.my.f1zz.whenyah.data.local.entity.WishlistItemEntity
+import id.my.f1zz.whenyah.data.notification.ReminderCoordinator
 import id.my.f1zz.whenyah.data.repository.PurchaseRepository
 import id.my.f1zz.whenyah.data.repository.SavingsPlanRepository
 import id.my.f1zz.whenyah.data.repository.SavingsRepository
@@ -61,6 +62,7 @@ class ItemDetailViewModel @Inject constructor(
     private val savingsRepository: SavingsRepository,
     private val savingsPlanRepository: SavingsPlanRepository,
     private val purchaseRepository: PurchaseRepository,
+    private val reminderCoordinator: ReminderCoordinator,
 ) : ViewModel() {
     private val itemId = UUID.fromString(
         checkNotNull(savedStateHandle.get<String>("itemId")) {
@@ -199,21 +201,23 @@ class ItemDetailViewModel @Inject constructor(
         _purchaseState.update { it.copy(isPurchasing = true, error = null) }
 
         viewModelScope.launch {
-            purchaseRepository.purchaseItem(itemId).fold(
-                onSuccess = {
-                    _purchaseState.update {
-                        it.copy(isPurchasing = false, purchased = true)
-                    }
-                },
-                onFailure = { failure ->
-                    _purchaseState.update {
-                        it.copy(
-                            isPurchasing = false,
-                            error = failure.message ?: "Could not mark the item purchased",
-                        )
-                    }
-                },
-            )
+            val result = purchaseRepository.purchaseItem(itemId)
+            if (result.isSuccess) {
+                runCatching {
+                    reminderCoordinator.syncPlanReminderForItem(itemId, force = true)
+                }
+                _purchaseState.update {
+                    it.copy(isPurchasing = false, purchased = true)
+                }
+            } else {
+                _purchaseState.update {
+                    it.copy(
+                        isPurchasing = false,
+                        error = result.exceptionOrNull()?.message
+                            ?: "Could not mark the item purchased",
+                    )
+                }
+            }
         }
     }
 
@@ -224,6 +228,9 @@ class ItemDetailViewModel @Inject constructor(
     fun deleteItem() {
         viewModelScope.launch {
             repository.deleteItem(itemId)
+            runCatching {
+                reminderCoordinator.syncPlanReminderForItem(itemId, force = true)
+            }
             _deleted.value = true
         }
     }

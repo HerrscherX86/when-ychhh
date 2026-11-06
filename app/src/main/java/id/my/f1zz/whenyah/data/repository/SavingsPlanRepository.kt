@@ -5,6 +5,7 @@ import id.my.f1zz.whenyah.data.local.entity.SavingsPlanEntity
 import id.my.f1zz.whenyah.domain.model.PlanFrequency
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
+import java.time.LocalTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -26,22 +27,29 @@ class SavingsPlanRepository @Inject constructor(
         itemId: UUID,
         contributionIdr: Long,
         frequency: PlanFrequency,
+        reminderEnabled: Boolean,
+        reminderLocalTime: LocalTime?,
     ): UUID {
         require(contributionIdr > 0) { "Contribution must be greater than zero" }
+        require(!reminderEnabled || reminderLocalTime != null) {
+            "Reminder time is required when reminders are enabled"
+        }
 
         val now = Instant.now()
         val existing = savingsPlanDao.getByItem(itemId)
         val plan = existing?.copy(
             contributionIdr = contributionIdr,
             frequency = frequency,
+            reminderEnabled = reminderEnabled,
+            reminderLocalTime = reminderLocalTime,
             updatedAt = now,
         ) ?: SavingsPlanEntity(
             id = UUID.randomUUID(),
             itemId = itemId,
             contributionIdr = contributionIdr,
             frequency = frequency,
-            reminderEnabled = false,
-            reminderLocalTime = null,
+            reminderEnabled = reminderEnabled,
+            reminderLocalTime = reminderLocalTime,
             active = true,
             createdAt = now,
             updatedAt = now,

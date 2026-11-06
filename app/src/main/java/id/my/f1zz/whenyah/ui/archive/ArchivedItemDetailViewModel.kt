@@ -7,6 +7,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import id.my.f1zz.whenyah.data.local.entity.PurchaseRecordEntity
 import id.my.f1zz.whenyah.data.local.entity.SavingsEventEntity
 import id.my.f1zz.whenyah.data.local.entity.WishlistItemEntity
+import id.my.f1zz.whenyah.data.notification.ReminderCoordinator
 import id.my.f1zz.whenyah.data.repository.PurchaseRepository
 import id.my.f1zz.whenyah.data.repository.SavingsRepository
 import id.my.f1zz.whenyah.data.repository.WishlistRepository
@@ -33,6 +34,7 @@ class ArchivedItemDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val wishlistRepository: WishlistRepository,
     private val purchaseRepository: PurchaseRepository,
+    private val reminderCoordinator: ReminderCoordinator,
     savingsRepository: SavingsRepository,
 ) : ViewModel() {
     private val itemId = UUID.fromString(
@@ -69,19 +71,28 @@ class ArchivedItemDetailViewModel @Inject constructor(
 
     fun restoreItem() {
         viewModelScope.launch {
-            purchaseRepository.restoreItem(itemId).fold(
-                onSuccess = { _restored.value = true },
-                onFailure = { failure ->
-                    _error.value = failure.message ?: "Could not restore the item"
-                },
-            )
+            val result = purchaseRepository.restoreItem(itemId)
+            if (result.isSuccess) {
+                runCatching {
+                    reminderCoordinator.syncPlanReminderForItem(itemId, force = true)
+                }
+                _restored.value = true
+            } else {
+                _error.value = result.exceptionOrNull()?.message
+                    ?: "Could not restore the item"
+            }
         }
     }
 
     fun deleteItem() {
         viewModelScope.launch {
             runCatching { wishlistRepository.deleteItem(itemId) }.fold(
-                onSuccess = { _deleted.value = true },
+                onSuccess = {
+                    runCatching {
+                        reminderCoordinator.cancelPlanReminderForItem(itemId)
+                    }
+                    _deleted.value = true
+                },
                 onFailure = { failure ->
                     _error.value = failure.message ?: "Could not delete the item"
                 },

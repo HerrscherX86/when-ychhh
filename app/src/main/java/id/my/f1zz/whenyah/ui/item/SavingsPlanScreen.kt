@@ -1,5 +1,6 @@
 package id.my.f1zz.whenyah.ui.item
 
+import android.app.TimePickerDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -33,6 +35,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -44,6 +47,8 @@ import id.my.f1zz.whenyah.ui.components.EmptyState
 import id.my.f1zz.whenyah.ui.util.formatDate
 import id.my.f1zz.whenyah.ui.util.formatIdr
 import id.my.f1zz.whenyah.ui.util.formatPlanFrequency
+import id.my.f1zz.whenyah.ui.util.formatTime
+import java.time.LocalTime
 
 @Composable
 fun SavingsPlanScreen(
@@ -52,6 +57,7 @@ fun SavingsPlanScreen(
     viewModel: SavingsPlanViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(state.saved, state.deleted) {
@@ -115,6 +121,47 @@ fun SavingsPlanScreen(
                     onClick = { viewModel.onFrequencyChange(frequency) },
                     label = { Text(formatPlanFrequency(frequency)) },
                 )
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Contribution reminder",
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    text = "Best-effort reminder. Requires notification permission.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Switch(
+                checked = state.reminderEnabled,
+                onCheckedChange = viewModel::onReminderEnabledChange,
+            )
+        }
+
+        if (state.reminderEnabled) {
+            OutlinedButton(
+                onClick = {
+                    TimePickerDialog(
+                        context,
+                        { _, hour, minute ->
+                            viewModel.onReminderTimeChange(LocalTime.of(hour, minute))
+                        },
+                        state.reminderLocalTime.hour,
+                        state.reminderLocalTime.minute,
+                        true,
+                    ).show()
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Reminder time: ${formatTime(state.reminderLocalTime)}")
             }
         }
 

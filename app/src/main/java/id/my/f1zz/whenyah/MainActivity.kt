@@ -4,17 +4,28 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
+import id.my.f1zz.whenyah.ui.MainViewModel
 import id.my.f1zz.whenyah.ui.WhenYahApp
 import id.my.f1zz.whenyah.ui.theme.WhenYahTheme
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private val viewModel: MainViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            WhenYahTheme {
+            val settings by viewModel.settings.collectAsStateWithLifecycle()
+            WhenYahTheme(
+                themeMode = settings.themeMode,
+                accentColor = settings.accentColor,
+                dynamicColor = settings.useDynamicColor,
+            ) {
                 WhenYahApp()
             }
         }

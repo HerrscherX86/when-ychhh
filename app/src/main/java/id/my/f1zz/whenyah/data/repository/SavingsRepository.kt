@@ -3,7 +3,10 @@ package id.my.f1zz.whenyah.data.repository
 import androidx.room.withTransaction
 import id.my.f1zz.whenyah.data.local.WhenYahDatabase
 import id.my.f1zz.whenyah.data.local.dao.SavingsEventDao
+import id.my.f1zz.whenyah.data.local.dao.WishlistItemDao
 import id.my.f1zz.whenyah.data.local.entity.SavingsEventEntity
+import id.my.f1zz.whenyah.data.notification.GoalNotifier
+import id.my.f1zz.whenyah.domain.model.ItemStatus
 import id.my.f1zz.whenyah.domain.model.SavingsEventType
 import id.my.f1zz.whenyah.domain.savings.SavingsCalculator
 import kotlinx.coroutines.flow.Flow
@@ -15,7 +18,9 @@ import javax.inject.Singleton
 @Singleton
 class SavingsRepository @Inject constructor(
     private val savingsEventDao: SavingsEventDao,
+    private val itemDao: WishlistItemDao,
     private val database: WhenYahDatabase,
+    private val goalNotifier: GoalNotifier,
 ) {
     fun observeEvents(itemId: UUID): Flow<List<SavingsEventEntity>> =
         savingsEventDao.observeByItem(itemId)
@@ -32,9 +37,12 @@ class SavingsRepository @Inject constructor(
     ): Result<Unit> = runCatching {
         require(amountIdr > 0) { "Amount must be greater than zero" }
 
-        database.withTransaction {
+        val goalPayload = database.withTransaction {
+            val item = itemDao.findById(itemId) ?: error("Item not found")
+            require(item.status == ItemStatus.ACTIVE) { "Item is not active" }
+
             val balance = SavingsCalculator.balance(savingsEventDao.getByItem(itemId))
-            try {
+            val newBalance = try {
                 Math.addExact(balance, amountIdr)
             } catch (_: ArithmeticException) {
                 throw IllegalArgumentException("Amount is too large")
@@ -51,6 +59,28 @@ class SavingsRepository @Inject constructor(
                     purchaseRecordId = null,
                 )
             )
+
+            if (item.targetPriceIdr > balance && newBalance >= item.targetPriceIdr) {
+                GoalReachedPayload(
+                    itemId = item.id,
+                    itemName = item.name,
+                    targetIdr = item.targetPriceIdr,
+                    savedIdr = newBalance,
+                )
+            } else {
+                null
+            }
+        }
+
+        goalPayload?.let { payload ->
+            runCatching {
+                goalNotifier.notifyGoalReached(
+                    itemId = payload.itemId,
+                    itemName = payload.itemName,
+                    targetIdr = payload.targetIdr,
+                    savedIdr = payload.savedIdr,
+                )
+            }
         }
     }
 
@@ -62,6 +92,9 @@ class SavingsRepository @Inject constructor(
         require(amountIdr > 0) { "Amount must be greater than zero" }
 
         database.withTransaction {
+            val item = itemDao.findById(itemId) ?: error("Item not found")
+            require(item.status == ItemStatus.ACTIVE) { "Item is not active" }
+
             val balance = SavingsCalculator.balance(savingsEventDao.getByItem(itemId))
             require(amountIdr <= balance) { "Withdrawal exceeds available savings" }
 
@@ -81,4 +114,11 @@ class SavingsRepository @Inject constructor(
 
     private fun normalizeNote(note: String?): String? =
         note?.trim()?.takeIf { it.isNotEmpty() }
+
+    private data class GoalReachedPayload(
+        val itemId: UUID,
+        val itemName: String,
+        val targetIdr: Long,
+        val savedIdr: Long,
+    )
 }

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import id.my.f1zz.whenyah.data.local.entity.SavingsPlanEntity
 import id.my.f1zz.whenyah.data.local.entity.WishlistItemEntity
+import id.my.f1zz.whenyah.data.notification.ReminderCoordinator
 import id.my.f1zz.whenyah.data.repository.SavingsPlanRepository
 import id.my.f1zz.whenyah.data.repository.SavingsRepository
 import id.my.f1zz.whenyah.data.repository.WishlistRepository
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.LocalTime
 import java.util.UUID
 import javax.inject.Inject
 
@@ -29,6 +31,8 @@ data class SavingsPlanUiState(
     val plan: SavingsPlanEntity? = null,
     val contribution: String = "",
     val frequency: PlanFrequency = PlanFrequency.WEEKLY,
+    val reminderEnabled: Boolean = false,
+    val reminderLocalTime: LocalTime = LocalTime.of(9, 0),
     val projection: SavingsPlanProjection? = null,
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
@@ -43,6 +47,7 @@ class SavingsPlanViewModel @Inject constructor(
     private val wishlistRepository: WishlistRepository,
     private val savingsRepository: SavingsRepository,
     private val savingsPlanRepository: SavingsPlanRepository,
+    private val reminderCoordinator: ReminderCoordinator,
 ) : ViewModel() {
     private val itemId = UUID.fromString(
         checkNotNull(savedStateHandle.get<String>("itemId")) {
@@ -66,6 +71,8 @@ class SavingsPlanViewModel @Inject constructor(
                 plan = plan,
                 contribution = plan?.contributionIdr?.toString().orEmpty(),
                 frequency = plan?.frequency ?: PlanFrequency.WEEKLY,
+                reminderEnabled = plan?.reminderEnabled ?: false,
+                reminderLocalTime = plan?.reminderLocalTime ?: LocalTime.of(9, 0),
                 isLoading = false,
             )
             _uiState.value = withProjection(state, today)
@@ -98,6 +105,18 @@ class SavingsPlanViewModel @Inject constructor(
         }
     }
 
+    fun onReminderEnabledChange(enabled: Boolean) {
+        _uiState.update {
+            it.copy(reminderEnabled = enabled, error = null)
+        }
+    }
+
+    fun onReminderTimeChange(time: LocalTime) {
+        _uiState.update {
+            it.copy(reminderLocalTime = time, error = null)
+        }
+    }
+
     fun savePlan() {
         val state = _uiState.value
         if (state.item == null) {
@@ -121,8 +140,13 @@ class SavingsPlanViewModel @Inject constructor(
                     itemId = itemId,
                     contributionIdr = amount,
                     frequency = state.frequency,
+                    reminderEnabled = state.reminderEnabled,
+                    reminderLocalTime = state.reminderLocalTime,
                 )
             }.onSuccess {
+                runCatching {
+                    reminderCoordinator.syncPlanReminderForItem(itemId, force = true)
+                }
                 _uiState.update { current ->
                     current.copy(isSaving = false, saved = true)
                 }
@@ -144,6 +168,9 @@ class SavingsPlanViewModel @Inject constructor(
             runCatching {
                 savingsPlanRepository.setActive(itemId, active = !plan.active)
             }.onSuccess {
+                runCatching {
+                    reminderCoordinator.syncPlanReminderForItem(itemId, force = true)
+                }
                 _uiState.update { state ->
                     state.copy(plan = plan.copy(active = !plan.active), error = null)
                 }
@@ -160,6 +187,9 @@ class SavingsPlanViewModel @Inject constructor(
             runCatching {
                 savingsPlanRepository.deletePlan(itemId)
             }.onSuccess {
+                runCatching {
+                    reminderCoordinator.syncPlanReminderForItem(itemId, force = true)
+                }
                 _uiState.update {
                     it.copy(plan = null, deleted = true)
                 }

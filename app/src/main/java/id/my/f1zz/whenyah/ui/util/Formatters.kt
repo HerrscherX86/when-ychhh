@@ -1,17 +1,15 @@
 package id.my.f1zz.whenyah.ui.util
 
+import id.my.f1zz.whenyah.domain.format.formatIdr as domainFormatIdr
 import id.my.f1zz.whenyah.domain.model.PlanFrequency
-import java.text.NumberFormat
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private val idrNumberFormat: NumberFormat =
-    NumberFormat.getIntegerInstance(Locale.forLanguageTag("id-ID"))
-
-fun formatIdr(amount: Long): String = "Rp ${idrNumberFormat.format(amount)}"
+fun formatIdr(amount: Long): String = domainFormatIdr(amount)
 
 fun formatDateTime(instant: Instant): String =
     instant
@@ -26,3 +24,6 @@ fun formatPlanFrequency(frequency: PlanFrequency): String = when (frequency) {
     PlanFrequency.WEEKLY -> "Weekly"
     PlanFrequency.MONTHLY -> "Monthly"
 }
+
+fun formatTime(time: LocalTime): String =
+    time.format(DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault()))

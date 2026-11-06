@@ -123,7 +123,9 @@ fun WhenYahApp() {
                 )
             }
             composable(TopLevelDestination.SETTINGS.route) {
-                SettingsScreen()
+                SettingsScreen(
+                    onOpenArchive = { navController.navigate(Routes.ARCHIVE) },
+                )
             }
 
             composable(
