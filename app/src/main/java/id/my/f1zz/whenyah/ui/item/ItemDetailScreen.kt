@@ -39,6 +39,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import id.my.f1zz.whenyah.data.local.entity.SavingsPlanEntity
+import id.my.f1zz.whenyah.domain.plan.SavingsPlanProjection
 import id.my.f1zz.whenyah.domain.savings.TransactionType
 import id.my.f1zz.whenyah.domain.validation.ItemValidation
 import id.my.f1zz.whenyah.ui.components.ConfirmDeleteDialog
@@ -46,13 +48,16 @@ import id.my.f1zz.whenyah.ui.components.EmptyState
 import id.my.f1zz.whenyah.ui.components.ItemImage
 import id.my.f1zz.whenyah.ui.components.SavingsEventRow
 import id.my.f1zz.whenyah.ui.components.TransactionDialog
+import id.my.f1zz.whenyah.ui.util.formatDate
 import id.my.f1zz.whenyah.ui.util.formatDateTime
 import id.my.f1zz.whenyah.ui.util.formatIdr
+import id.my.f1zz.whenyah.ui.util.formatPlanFrequency
 import kotlin.math.roundToInt
 
 @Composable
 fun ItemDetailScreen(
     onEdit: () -> Unit,
+    onEditPlan: () -> Unit,
     onViewHistory: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -120,6 +125,12 @@ fun ItemDetailScreen(
                     isGoalReached = state.savings.isGoalReached,
                     onDeposit = { viewModel.startTransaction(TransactionType.DEPOSIT) },
                     onWithdraw = { viewModel.startTransaction(TransactionType.WITHDRAWAL) },
+                )
+
+                PlanCard(
+                    plan = state.plan,
+                    projection = state.planProjection,
+                    onEditPlan = onEditPlan,
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -319,6 +330,121 @@ private fun SavingsCard(
                     enabled = availableIdr > 0,
                 ) {
                     Text("Withdraw")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlanCard(
+    plan: SavingsPlanEntity?,
+    projection: SavingsPlanProjection?,
+    onEditPlan: () -> Unit,
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = "Savings plan",
+                style = MaterialTheme.typography.titleMedium,
+            )
+
+            if (plan == null) {
+                Text(
+                    text = "No plan yet. Set a contribution amount and cadence to estimate completion.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Button(onClick = onEditPlan) {
+                    Text("Set a plan")
+                }
+            } else {
+                Text(
+                    text = "${formatPlanFrequency(plan.frequency)} • ${formatIdr(plan.contributionIdr)}",
+                    style = MaterialTheme.typography.titleSmall,
+                )
+
+                if (!plan.active) {
+                    Text(
+                        text = "Plan paused",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                when {
+                    projection == null -> {
+                        Text(
+                            text = "No estimate available.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                    projection.isGoalReached -> {
+                        Text(
+                            text = "Goal reached",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        projection.completionDate?.let { date ->
+                            Text(
+                                text = "Completion date: ${formatDate(date)}",
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                    }
+
+                    !plan.active -> {
+                        Text(
+                            text = "Resume the plan to see its completion estimate.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                    else -> {
+                        val contributionLabel =
+                            if (projection.requiredContributions == 1L) {
+                                "1 contribution"
+                            } else {
+                                "${projection.requiredContributions} contributions"
+                            }
+                        Text(
+                            text = contributionLabel,
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                        Text(
+                            text = "Remaining: ${formatIdr(projection.remainingIdr)}",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        val completionDate = projection.completionDate
+                        if (completionDate == null) {
+                            Text(
+                                text = "The projected date is too far in the future.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        } else {
+                            Text(
+                                text = "Estimated completion: ${formatDate(completionDate)}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        Text(
+                            text = "Estimate assumes contributions beginning today and continuing on schedule.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                OutlinedButton(onClick = onEditPlan) {
+                    Text("Edit plan")
                 }
             }
         }

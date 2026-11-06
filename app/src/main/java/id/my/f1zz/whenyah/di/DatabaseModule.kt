@@ -10,6 +10,7 @@ import dagger.hilt.components.SingletonComponent
 import id.my.f1zz.whenyah.data.local.WhenYahDatabase
 import id.my.f1zz.whenyah.data.local.dao.CollectionDao
 import id.my.f1zz.whenyah.data.local.dao.SavingsEventDao
+import id.my.f1zz.whenyah.data.local.dao.SavingsPlanDao
 import id.my.f1zz.whenyah.data.local.dao.WishlistItemDao
 import javax.inject.Singleton
 
@@ -32,4 +33,8 @@ object DatabaseModule {
     @Provides
     fun provideSavingsEventDao(database: WhenYahDatabase): SavingsEventDao =
         database.savingsEventDao()
+
+    @Provides
+    fun provideSavingsPlanDao(database: WhenYahDatabase): SavingsPlanDao =
+        database.savingsPlanDao()
 }

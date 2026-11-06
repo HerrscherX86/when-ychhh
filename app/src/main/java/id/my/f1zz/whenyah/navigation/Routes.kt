@@ -6,6 +6,7 @@ object Routes {
     const val COLLECTION_DETAIL = "collection/{collectionId}"
     const val ITEM_DETAIL = "item/{itemId}"
     const val ITEM_HISTORY = "item/{itemId}/history"
+    const val ITEM_PLAN = "item/{itemId}/plan"
     const val ITEM_ADD = "add-item?collectionId={collectionId}"
     const val ITEM_EDIT = "edit-item/{itemId}"
 
@@ -14,6 +15,8 @@ object Routes {
     fun itemDetail(itemId: UUID): String = "item/$itemId"
 
     fun itemHistory(itemId: UUID): String = "item/$itemId/history"
+
+    fun itemPlan(itemId: UUID): String = "item/$itemId/plan"
 
     fun itemAdd(collectionId: UUID? = null): String =
         if (collectionId == null) "add-item" else "add-item?collectionId=$collectionId"

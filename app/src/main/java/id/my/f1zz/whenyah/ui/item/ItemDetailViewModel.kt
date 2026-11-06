@@ -5,9 +5,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import id.my.f1zz.whenyah.data.local.entity.SavingsEventEntity
+import id.my.f1zz.whenyah.data.local.entity.SavingsPlanEntity
 import id.my.f1zz.whenyah.data.local.entity.WishlistItemEntity
+import id.my.f1zz.whenyah.data.repository.SavingsPlanRepository
 import id.my.f1zz.whenyah.data.repository.SavingsRepository
 import id.my.f1zz.whenyah.data.repository.WishlistRepository
+import id.my.f1zz.whenyah.domain.plan.SavingsPlanCalculator
+import id.my.f1zz.whenyah.domain.plan.SavingsPlanProjection
+import id.my.f1zz.whenyah.domain.plan.observeToday
 import id.my.f1zz.whenyah.domain.savings.SavingsCalculator
 import id.my.f1zz.whenyah.domain.savings.SavingsSummary
 import id.my.f1zz.whenyah.domain.savings.TransactionType
@@ -28,6 +33,8 @@ data class ItemDetailUiState(
     val collectionName: String? = null,
     val savings: SavingsSummary = SavingsSummary.Empty,
     val events: List<SavingsEventEntity> = emptyList(),
+    val plan: SavingsPlanEntity? = null,
+    val planProjection: SavingsPlanProjection? = null,
     val isLoading: Boolean = true,
 )
 
@@ -44,6 +51,7 @@ class ItemDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: WishlistRepository,
     private val savingsRepository: SavingsRepository,
+    private val savingsPlanRepository: SavingsPlanRepository,
 ) : ViewModel() {
     private val itemId = UUID.fromString(
         checkNotNull(savedStateHandle.get<String>("itemId")) {
@@ -55,19 +63,36 @@ class ItemDetailViewModel @Inject constructor(
         repository.observeItem(itemId),
         repository.observeCollections(),
         savingsRepository.observeEvents(itemId),
-    ) { item, collections, events ->
+        savingsPlanRepository.observePlan(itemId),
+        observeToday(),
+    ) { item, collections, events, plan, today ->
         val collectionName = item?.collectionId?.let { collectionId ->
             collections.firstOrNull { it.collection.id == collectionId }?.collection?.name
         }
         val savings = item?.let {
             SavingsCalculator.summarize(events, it.targetPriceIdr)
         } ?: SavingsSummary.Empty
+        val planProjection = if (item != null && plan != null) {
+            runCatching {
+                SavingsPlanCalculator.project(
+                    targetPriceIdr = item.targetPriceIdr,
+                    availableBalanceIdr = savings.availableIdr,
+                    contributionIdr = plan.contributionIdr,
+                    frequency = plan.frequency,
+                    startDate = today,
+                )
+            }.getOrNull()
+        } else {
+            null
+        }
 
         ItemDetailUiState(
             item = item,
             collectionName = collectionName,
             savings = savings,
             events = events,
+            plan = plan,
+            planProjection = planProjection,
             isLoading = false,
         )
     }.stateIn(

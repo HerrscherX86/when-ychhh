@@ -29,6 +29,7 @@ import id.my.f1zz.whenyah.ui.collections.CollectionsScreen
 import id.my.f1zz.whenyah.ui.home.HomeScreen
 import id.my.f1zz.whenyah.ui.item.ItemDetailScreen
 import id.my.f1zz.whenyah.ui.item.ItemEditorScreen
+import id.my.f1zz.whenyah.ui.item.SavingsPlanScreen
 import id.my.f1zz.whenyah.ui.item.TransactionHistoryScreen
 import id.my.f1zz.whenyah.ui.settings.SettingsScreen
 import java.util.UUID
@@ -48,6 +49,7 @@ fun WhenYahApp() {
     val title = when (currentRoute) {
         Routes.ITEM_DETAIL -> "Item details"
         Routes.ITEM_HISTORY -> "Transaction history"
+        Routes.ITEM_PLAN -> "Savings plan"
         Routes.ITEM_ADD -> "Add item"
         Routes.ITEM_EDIT -> "Edit item"
         Routes.COLLECTION_DETAIL -> "Collection"
@@ -146,6 +148,9 @@ fun WhenYahApp() {
                     onEdit = {
                         navController.navigate(Routes.itemEdit(UUID.fromString(itemId)))
                     },
+                    onEditPlan = {
+                        navController.navigate(Routes.itemPlan(UUID.fromString(itemId)))
+                    },
                     onViewHistory = {
                         navController.navigate(Routes.itemHistory(UUID.fromString(itemId)))
                     },
@@ -160,6 +165,17 @@ fun WhenYahApp() {
                 ),
             ) {
                 TransactionHistoryScreen()
+            }
+
+            composable(
+                route = Routes.ITEM_PLAN,
+                arguments = listOf(
+                    navArgument("itemId") { type = NavType.StringType },
+                ),
+            ) {
+                SavingsPlanScreen(
+                    onFinished = { navController.popBackStack() },
+                )
             }
 
             composable(
