@@ -56,6 +56,18 @@ class SettingsRepository @Inject constructor(
 
     suspend fun currentSettings(): AppSettings = settings.first()
 
+    suspend fun replaceSettings(settings: AppSettings) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[Keys.THEME_MODE] = settings.themeMode.name
+            preferences[Keys.ACCENT_COLOR] = settings.accentColor.name
+            preferences[Keys.USE_DYNAMIC_COLOR] = settings.useDynamicColor
+            preferences[Keys.NOTIFICATIONS_ENABLED] = settings.notificationsEnabled
+            preferences[Keys.GOAL_NOTIFICATIONS_ENABLED] = settings.goalNotificationsEnabled
+            preferences[Keys.SUMMARY_CADENCE] = settings.summaryCadence.name
+            preferences[Keys.SUMMARY_TIME] = settings.summaryTime.toString()
+        }
+    }
+
     suspend fun setThemeMode(value: ThemeMode) {
         context.settingsDataStore.edit { it[Keys.THEME_MODE] = value.name }
     }

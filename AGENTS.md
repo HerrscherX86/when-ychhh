@@ -2,16 +2,16 @@
 
 ## Repo state
 
-- Single-module Android app (`:app`). Wishlist, collections, savings, plans, dashboard, purchase completion, archive, settings, themes, and notifications are implemented. Backup/restore is not implemented yet.
+- Single-module Android app (`:app`). Wishlist, collections, savings, plans, dashboard, purchase completion, archive, settings, themes, notifications, and versioned ZIP backup/restore are implemented.
 - `wishlist_savings_tracker_PRD_v1.2.md` is the product source of truth. Read PRD §2 (locked decisions), §6 (accounting invariants), §8 (architecture), and §15 (open decisions) before changing behavior. Do not invent behavior for open items; use recommended defaults only when configurable/documented.
-- The repository is initialized but has no commits yet. No README, CI, pre-commit, or custom lint/format config exists.
+- Git repo is initialized. No README, CI, pre-commit, or custom lint/format config exists.
 
 ## Build and toolchain
 
 - Gradle wrapper 9.4.1, AGP 9.2.1, Kotlin 2.2.10, Compose BOM 2026.02.01, Java target 11.
 - `minSdk = 31` is locked by the PRD; `compileSdk = 37`; `targetSdk = 36`. Package is `id.my.f1zz.whenyah`.
 - AGP 9 uses built-in Kotlin: do not apply `org.jetbrains.kotlin.android` or kapt. Use KSP (2.3.6) and Hilt (2.59.2+ required; currently 2.60.1).
-- Coil is pinned to 3.3.0 until Kotlin is upgraded. Coil 3.4+ pulls Kotlin 2.3/2.4 metadata that this project's Kotlin 2.2 compiler cannot read.
+- Coil is pinned to 3.3.0 and kotlinx-serialization to 1.9.0 until Kotlin is upgraded. Newer releases pull Kotlin 2.3/2.4 metadata that this project's Kotlin 2.2 compiler cannot read.
 - Dependencies/versions live in `gradle/libs.versions.toml`. Add a version plus library/plugin alias there, then reference `libs.*` from `app/build.gradle.kts`.
 - `local.properties` (`sdk.dir`) is machine-specific and gitignored.
 
@@ -49,14 +49,14 @@
 - Settings persist through `data/settings/SettingsRepository.kt` (Preferences DataStore named `settings`). `MainViewModel` applies theme mode, accent color, and dynamic color in `MainActivity`; `SettingsViewModel` owns settings updates and reminder rescheduling.
 - Notifications use `data/notification/`: `NotificationService` creates channels/posts, `ReminderCoordinator` schedules WorkManager one-time jobs and computes next occurrences, and `PlanReminderWorker`/`SummaryWorker` obtain the coordinator through `ReminderWorkerEntryPoint`. Goal-reached notifications are detected inside `SavingsRepository.recordDeposit` from the actual before/after balance crossing, so no separate “notified” flag is needed.
 - Plan reminders are stored on `SavingsPlanEntity` (`reminderEnabled`, `reminderLocalTime`) and scheduled/rescheduled from the plan editor, settings changes, purchase/restore, and app start. Purchased items must not keep reminder jobs.
-- `WhenYahDatabase` is version 1 with the PRD's core entities. Room schemas export to `app/schemas/`; bump the database version and add explicit migrations when changing entities. Do not silently enable destructive migrations.
+- Backup/restore lives in `data/backup/`. Export writes a versioned ZIP with `manifest.json`, `data.json`, and `images/`; the manifest records format/schema versions, sizes, and SHA-256 checksums. Restore validates manifest/schema/checksums/relations/sizes, stages images under new app-owned names, then replaces all Room tables in one transaction and applies settings. It cancels and re-syncs reminders after restore; it must never replay transactions or fire retroactive notifications.
+- `WhenYahDatabase` is version 1 with the PRD's core entities. Room schemas export to `app/schemas/`; bump the version in `DatabaseConstants.kt`, add explicit migrations, and keep backup schema handling in sync. Do not silently enable destructive migrations.
 - Add entities under `data/local/entity`, DAOs under `data/local/dao`, Hilt providers in `di/DatabaseModule.kt`, and screen ViewModels next to their screens.
-- Not implemented yet: backup/restore (the Settings Data screen explicitly says so).
-- Keep balance, projection, purchase, aggregation, and reminder-schedule logic out of Compose/Android UI classes so it stays unit-testable. `ItemValidationTest` covers IDR parsing, names, and purchase URL validation; `SavingsCalculatorTest` covers ledger balances, progress, surplus, zero targets, withdrawal limits, and overflow; `SavingsPlanCalculatorTest` covers the PRD acceptance table, rounding, daily/weekly recurrence, monthly anchor/clamp, leap years, year boundaries, and far-future projections; `DashboardCalculatorTest` covers totals, funded counts, zero-target cases, and overflow; `PurchaseAccountingTest` covers spend-all, zero-balance, history preservation, and overfunded purchases; `NotificationScheduleCalculatorTest` covers today/passed-time reminders, weekly/monthly recurrence, leap-day clamping, and summary schedules.
-- `ui/home` is the dashboard plus the all-items list; `ui/collections` has collection list/detail; `ui/item` has active item detail, add/edit, transaction dialog/history, and plan editor with reminder settings; `ui/archive` has purchased list/read-only detail; `ui/settings` has appearance, notification, data, and about sections. `ExampleUnitTest` and `ExampleInstrumentedTest` are scaffold tests to replace.
+- Keep balance, projection, purchase, aggregation, backup-validation, and reminder-schedule logic out of Compose/Android UI classes so it stays unit-testable. `ItemValidationTest` covers IDR parsing, names, and purchase URL validation; `SavingsCalculatorTest` covers ledger balances, progress, surplus, zero targets, withdrawal limits, and overflow; `SavingsPlanCalculatorTest` covers the PRD acceptance table, rounding, daily/weekly recurrence, monthly anchor/clamp, leap years, year boundaries, and far-future projections; `DashboardCalculatorTest` covers totals, funded counts, zero-target cases, and overflow; `PurchaseAccountingTest` covers spend-all, zero-balance, history preservation, and overfunded purchases; `NotificationScheduleCalculatorTest` covers today/passed-time reminders, weekly/monthly recurrence, leap-day clamping, and summary schedules; `BackupValidatorTest` covers JSON round-trip, references, amounts, enums, image paths, reminders, and settings.
+- `ui/home` is the dashboard plus the all-items list; `ui/collections` has collection list/detail; `ui/item` has active item detail, add/edit, transaction dialog/history, and plan editor with reminder settings; `ui/archive` has purchased list/read-only detail; `ui/settings` has appearance, notification, data (archive + backup/restore), and about sections. `ExampleUnitTest` and `ExampleInstrumentedTest` are scaffold tests to replace.
 - Home's `LazyColumn` intentionally shows the same item in multiple sections (nearest goals and all items). LazyColumn keys must be globally unique, so prefix section keys (`item-`, `nearest-`, `activity-`, `plan-`). Reusing a raw item UUID across sections crashes when scrolled.
 
 ## Other product constraints
 
 - The app is offline-first. Notifications are opt-in and best-effort (`WorkManager` timing is not exact); request `POST_NOTIFICATIONS` on Android 13+ and keep all features working when permission is denied. Weekly/monthly schedules use local time and monthly recurrence keeps the original day-of-month with end-of-month clamping.
-- Copy picked image bytes into app-owned private storage. Backups/restores use SAF and must validate archives, reject zip-slip paths, and avoid partial imports.
+- Copy picked image bytes into app-owned private storage. Backups/restores use SAF and must validate archives, reject zip-slip paths, cap entry sizes, and avoid partial imports. Restoring is a full replacement, not a merge.

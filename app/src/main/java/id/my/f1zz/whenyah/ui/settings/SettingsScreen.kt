@@ -3,6 +3,7 @@ package id.my.f1zz.whenyah.ui.settings
 import android.Manifest
 import android.app.TimePickerDialog
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -16,16 +17,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -39,17 +44,34 @@ import id.my.f1zz.whenyah.domain.settings.AccentColor
 import id.my.f1zz.whenyah.domain.settings.SummaryCadence
 import id.my.f1zz.whenyah.domain.settings.ThemeMode
 import id.my.f1zz.whenyah.ui.util.formatTime
+import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun SettingsScreen(
     onOpenArchive: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
+    backupViewModel: BackupViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val backupState by backupViewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var permissionDenied by rememberSaveable { mutableStateOf(false) }
+    var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/zip"),
+    ) { uri ->
+        if (uri != null) backupViewModel.export(uri)
+    }
+    val restoreLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri != null) pendingRestoreUri = uri
+    }
+    val backupBusy = backupState.isExporting || backupState.isRestoring
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -238,8 +260,52 @@ fun SettingsScreen(
                 ) {
                     Text("Purchased archive")
                 }
+
+                OutlinedButton(
+                    onClick = { exportLauncher.launch(backupFileName()) },
+                    enabled = !backupBusy,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(if (backupState.isExporting) "Exporting…" else "Export backup")
+                }
+
+                OutlinedButton(
+                    onClick = {
+                        restoreLauncher.launch(
+                            arrayOf(
+                                "application/zip",
+                                "application/x-zip-compressed",
+                                "application/octet-stream",
+                            )
+                        )
+                    },
+                    enabled = !backupBusy,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(if (backupState.isRestoring) "Restoring…" else "Restore backup")
+                }
+
+                if (backupBusy) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
+
+                backupState.message?.let { message ->
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                backupState.error?.let { message ->
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+
                 Text(
-                    text = "Backup and restore are not available yet.",
+                    text = "Restore replaces all local data. Backups use Android's file picker, so no storage permission is needed.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -260,6 +326,39 @@ fun SettingsScreen(
             }
         }
     }
+
+    pendingRestoreUri?.let { uri ->
+        AlertDialog(
+            onDismissRequest = { pendingRestoreUri = null },
+            title = { Text("Restore backup?") },
+            text = {
+                Text(
+                    "This replaces all items, collections, savings, plans, purchase records, " +
+                        "images, and settings. This cannot be undone. Export a backup first if needed."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingRestoreUri = null
+                        backupViewModel.restore(uri)
+                    },
+                ) {
+                    Text("Restore")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingRestoreUri = null }) {
+                    Text("Cancel")
+                }
+            },
+        )
+    }
+}
+
+private fun backupFileName(): String {
+    val stamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmm"))
+    return "whenyah-backup-$stamp.zip"
 }
 
 @Composable

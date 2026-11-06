@@ -1,6 +1,8 @@
 package id.my.f1zz.whenyah.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Upsert
 import id.my.f1zz.whenyah.data.local.entity.WishlistItemEntity
@@ -41,4 +43,13 @@ interface WishlistItemDao {
 
     @Query("DELETE FROM wishlist_items WHERE id = :id")
     suspend fun deleteById(id: UUID)
+
+    @Query("SELECT * FROM wishlist_items")
+    suspend fun getAll(): List<WishlistItemEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(items: List<WishlistItemEntity>)
+
+    @Query("DELETE FROM wishlist_items")
+    suspend fun deleteAll()
 }

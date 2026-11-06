@@ -2,6 +2,8 @@ package id.my.f1zz.whenyah.data.local.dao
 
 import androidx.room.Dao
 import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Upsert
 import id.my.f1zz.whenyah.data.local.entity.CollectionEntity
@@ -38,4 +40,13 @@ interface CollectionDao {
 
     @Delete
     suspend fun delete(collection: CollectionEntity)
+
+    @Query("SELECT * FROM collections")
+    suspend fun getAll(): List<CollectionEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(collections: List<CollectionEntity>)
+
+    @Query("DELETE FROM collections")
+    suspend fun deleteAll()
 }

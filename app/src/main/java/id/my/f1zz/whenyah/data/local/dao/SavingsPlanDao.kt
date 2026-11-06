@@ -1,6 +1,8 @@
 package id.my.f1zz.whenyah.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Upsert
 import id.my.f1zz.whenyah.data.local.entity.SavingsPlanEntity
@@ -29,4 +31,10 @@ interface SavingsPlanDao {
 
     @Query("DELETE FROM savings_plans WHERE itemId = :itemId")
     suspend fun deleteByItem(itemId: UUID)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(plans: List<SavingsPlanEntity>)
+
+    @Query("DELETE FROM savings_plans")
+    suspend fun deleteAll()
 }

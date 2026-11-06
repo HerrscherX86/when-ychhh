@@ -22,7 +22,7 @@ import id.my.f1zz.whenyah.data.local.entity.WishlistItemEntity
         SavingsPlanEntity::class,
         PurchaseRecordEntity::class,
     ],
-    version = 1,
+    version = WHEN_YAH_DATABASE_VERSION,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

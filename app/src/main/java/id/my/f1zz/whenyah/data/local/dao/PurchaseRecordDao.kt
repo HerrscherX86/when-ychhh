@@ -2,6 +2,7 @@ package id.my.f1zz.whenyah.data.local.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import id.my.f1zz.whenyah.data.local.entity.PurchaseRecordEntity
 import kotlinx.coroutines.flow.Flow
@@ -34,4 +35,13 @@ interface PurchaseRecordDao {
         """
     )
     suspend fun getLatestForItem(itemId: UUID): PurchaseRecordEntity?
+
+    @Query("SELECT * FROM purchase_records")
+    suspend fun getAll(): List<PurchaseRecordEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(records: List<PurchaseRecordEntity>)
+
+    @Query("DELETE FROM purchase_records")
+    suspend fun deleteAll()
 }
