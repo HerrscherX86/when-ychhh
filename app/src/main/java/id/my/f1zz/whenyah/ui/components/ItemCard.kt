@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,7 +18,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import id.my.f1zz.whenyah.data.local.entity.WishlistItemEntity
+import id.my.f1zz.whenyah.domain.savings.SavingsSummary
 import id.my.f1zz.whenyah.ui.util.formatIdr
+import kotlin.math.roundToInt
 
 @Composable
 fun ItemCard(
@@ -25,6 +28,7 @@ fun ItemCard(
     collectionName: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    savings: SavingsSummary? = null,
 ) {
     Card(
         onClick = onClick,
@@ -53,6 +57,32 @@ fun ItemCard(
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.primary,
                 )
+                if (savings != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LinearProgressIndicator(
+                        progress = { savings.progress },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp),
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = if (savings.isGoalReached) {
+                            "Goal reached • ${formatIdr(savings.availableIdr)} saved"
+                        } else {
+                            "${(savings.progress * 100).roundToInt()}% • " +
+                                "${formatIdr(savings.availableIdr)} saved"
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (savings.isGoalReached) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 val metadata = listOfNotNull(item.category, collectionName)
                     .filter { it.isNotBlank() }
                     .joinToString(" • ")

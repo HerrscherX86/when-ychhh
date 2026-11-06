@@ -94,11 +94,12 @@ fun CollectionDetailScreen(
                             ),
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
-                            items(items = state.items, key = { it.id }) { item ->
+                            items(items = state.items, key = { it.item.id }) { entry ->
                                 ItemCard(
-                                    item = item,
+                                    item = entry.item,
+                                    savings = entry.savings,
                                     collectionName = null,
-                                    onClick = { onItemClick(item.id) },
+                                    onClick = { onItemClick(entry.item.id) },
                                     modifier = Modifier.fillMaxWidth(),
                                 )
                             }

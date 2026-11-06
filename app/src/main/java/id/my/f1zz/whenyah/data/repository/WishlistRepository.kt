@@ -3,12 +3,15 @@ package id.my.f1zz.whenyah.data.repository
 import android.net.Uri
 import id.my.f1zz.whenyah.data.image.ItemImageStore
 import id.my.f1zz.whenyah.data.local.dao.CollectionDao
+import id.my.f1zz.whenyah.data.local.dao.SavingsEventDao
 import id.my.f1zz.whenyah.data.local.dao.WishlistItemDao
 import id.my.f1zz.whenyah.data.local.entity.CollectionEntity
 import id.my.f1zz.whenyah.data.local.entity.WishlistItemEntity
 import id.my.f1zz.whenyah.data.local.model.CollectionWithItemCount
 import id.my.f1zz.whenyah.domain.model.ItemStatus
+import id.my.f1zz.whenyah.domain.savings.SavingsCalculator
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
@@ -18,12 +21,43 @@ import javax.inject.Singleton
 class WishlistRepository @Inject constructor(
     private val itemDao: WishlistItemDao,
     private val collectionDao: CollectionDao,
+    private val savingsEventDao: SavingsEventDao,
     private val imageStore: ItemImageStore,
 ) {
-    fun observeActiveItems(): Flow<List<WishlistItemEntity>> = itemDao.observeActive()
+    fun observeActiveItemsWithSavings(): Flow<List<WishlistItemWithSavings>> =
+        combine(itemDao.observeActive(), savingsEventDao.observeAll()) { items, events ->
+            val eventsByItem = events.groupBy { it.itemId }
+            items.map { item ->
+                WishlistItemWithSavings(
+                    item = item,
+                    savings = SavingsCalculator.summarize(
+                        entries = eventsByItem[item.id].orEmpty(),
+                        targetPriceIdr = item.targetPriceIdr,
+                    ),
+                )
+            }
+        }
 
-    fun observeItemsInCollection(collectionId: UUID): Flow<List<WishlistItemEntity>> =
-        itemDao.observeActiveByCollection(collectionId)
+    fun observeItemsInCollectionWithSavings(
+        collectionId: UUID,
+    ): Flow<List<WishlistItemWithSavings>> = combine(
+        itemDao.observeActiveByCollection(collectionId),
+        savingsEventDao.observeAll(),
+    ) { items, events ->
+        val itemIds = items.mapTo(mutableSetOf()) { it.id }
+        val eventsByItem = events
+            .filter { it.itemId in itemIds }
+            .groupBy { it.itemId }
+        items.map { item ->
+            WishlistItemWithSavings(
+                item = item,
+                savings = SavingsCalculator.summarize(
+                    entries = eventsByItem[item.id].orEmpty(),
+                    targetPriceIdr = item.targetPriceIdr,
+                ),
+            )
+        }
+    }
 
     fun observeItem(itemId: UUID): Flow<WishlistItemEntity?> = itemDao.observeById(itemId)
 

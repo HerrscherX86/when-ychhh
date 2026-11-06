@@ -5,12 +5,15 @@ import java.util.UUID
 object Routes {
     const val COLLECTION_DETAIL = "collection/{collectionId}"
     const val ITEM_DETAIL = "item/{itemId}"
+    const val ITEM_HISTORY = "item/{itemId}/history"
     const val ITEM_ADD = "add-item?collectionId={collectionId}"
     const val ITEM_EDIT = "edit-item/{itemId}"
 
     fun collectionDetail(collectionId: UUID): String = "collection/$collectionId"
 
     fun itemDetail(itemId: UUID): String = "item/$itemId"
+
+    fun itemHistory(itemId: UUID): String = "item/$itemId/history"
 
     fun itemAdd(collectionId: UUID? = null): String =
         if (collectionId == null) "add-item" else "add-item?collectionId=$collectionId"

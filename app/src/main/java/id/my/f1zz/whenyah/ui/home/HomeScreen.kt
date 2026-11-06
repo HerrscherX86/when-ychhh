@@ -117,11 +117,12 @@ fun HomeScreen(
                         ),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        items(items = state.items, key = { it.id }) { item ->
+                        items(items = state.items, key = { it.item.id }) { entry ->
                             ItemCard(
-                                item = item,
-                                collectionName = state.collectionNames[item.collectionId],
-                                onClick = { onItemClick(item.id) },
+                                item = entry.item,
+                                savings = entry.savings,
+                                collectionName = state.collectionNames[entry.item.collectionId],
+                                onClick = { onItemClick(entry.item.id) },
                             )
                         }
                     }

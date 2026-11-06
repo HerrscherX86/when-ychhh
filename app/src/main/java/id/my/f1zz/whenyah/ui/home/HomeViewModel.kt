@@ -3,7 +3,7 @@ package id.my.f1zz.whenyah.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import id.my.f1zz.whenyah.data.local.entity.WishlistItemEntity
+import id.my.f1zz.whenyah.data.repository.WishlistItemWithSavings
 import id.my.f1zz.whenyah.data.repository.WishlistRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -19,7 +19,7 @@ enum class ItemSort {
 }
 
 data class HomeUiState(
-    val items: List<WishlistItemEntity> = emptyList(),
+    val items: List<WishlistItemWithSavings> = emptyList(),
     val collectionNames: Map<UUID, String> = emptyMap(),
     val query: String = "",
     val sort: ItemSort = ItemSort.RECENT,
@@ -34,7 +34,7 @@ class HomeViewModel @Inject constructor(
     private val sort = MutableStateFlow(ItemSort.RECENT)
 
     val uiState: StateFlow<HomeUiState> = combine(
-        repository.observeActiveItems(),
+        repository.observeActiveItemsWithSavings(),
         repository.observeCollections(),
         query,
         sort,
@@ -43,11 +43,11 @@ class HomeViewModel @Inject constructor(
         val filtered = if (currentQuery.isBlank()) {
             items
         } else {
-            items.filter { it.name.contains(currentQuery, ignoreCase = true) }
+            items.filter { it.item.name.contains(currentQuery, ignoreCase = true) }
         }
         val sorted = when (currentSort) {
-            ItemSort.RECENT -> filtered.sortedByDescending { it.updatedAt }
-            ItemSort.NAME -> filtered.sortedBy { it.name.lowercase() }
+            ItemSort.RECENT -> filtered.sortedByDescending { it.item.updatedAt }
+            ItemSort.NAME -> filtered.sortedBy { it.item.name.lowercase() }
         }
 
         HomeUiState(

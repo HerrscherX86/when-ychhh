@@ -9,6 +9,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import id.my.f1zz.whenyah.data.local.WhenYahDatabase
 import id.my.f1zz.whenyah.data.local.dao.CollectionDao
+import id.my.f1zz.whenyah.data.local.dao.SavingsEventDao
 import id.my.f1zz.whenyah.data.local.dao.WishlistItemDao
 import javax.inject.Singleton
 
@@ -27,4 +28,8 @@ object DatabaseModule {
     @Provides
     fun provideWishlistItemDao(database: WhenYahDatabase): WishlistItemDao =
         database.wishlistItemDao()
+
+    @Provides
+    fun provideSavingsEventDao(database: WhenYahDatabase): SavingsEventDao =
+        database.savingsEventDao()
 }

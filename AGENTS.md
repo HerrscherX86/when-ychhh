@@ -2,7 +2,7 @@
 
 ## Repo state
 
-- Single-module Android app (`:app`). Wishlist and collections are implemented: item CRUD, local images, categories, collection assignment, search/sort, and item detail/edit screens. Savings, plans, purchase completion, notifications, and backup are not implemented yet.
+- Single-module Android app (`:app`). Wishlist, collections, and the savings ledger are implemented: item CRUD, local images, categories, collection assignment, search/sort, deposits, withdrawals, transaction history, per-item balances, and completion progress. Savings plans, purchase completion, notifications, and backup are not implemented yet.
 - `wishlist_savings_tracker_PRD_v1.2.md` is the product source of truth. Read PRD §2 (locked decisions), §6 (accounting invariants), §8 (architecture), and §15 (open decisions) before changing behavior. Do not invent behavior for open items; use recommended defaults only when configurable/documented.
 - The repository is initialized but has no commits yet. No README, CI, pre-commit, or custom lint/format config exists.
 
@@ -42,11 +42,12 @@
 
 - Wired now: Compose/Material 3 UI in `ui/`, Navigation Compose in `ui/WhenYahApp.kt` + `navigation/`, Hilt in `WhenYahApplication.kt` + `di/`, Room in `data/local/`, and Coil for local image display.
 - Wishlist data flows through `data/repository/WishlistRepository.kt`. Images are copied into `filesDir/item_images` by `ItemImageStore`; Room stores only the relative path. Deleting an item deletes its image.
+- Savings flows through `data/repository/SavingsRepository.kt`. Balance and progress are always derived with `domain/savings/SavingsCalculator.kt`; never store a mutable balance. Withdrawals are validated and inserted inside a Room transaction so concurrent withdrawals cannot overdraw.
 - `WhenYahDatabase` is version 1 with the PRD's core entities. Room schemas export to `app/schemas/`; bump the database version and add explicit migrations when changing entities. Do not silently enable destructive migrations.
 - Add entities under `data/local/entity`, DAOs under `data/local/dao`, Hilt providers in `di/DatabaseModule.kt`, and screen ViewModels next to their screens.
 - Not wired yet: DataStore, WorkManager.
-- Keep balance, projection, and aggregation logic out of Compose/Android UI classes so it stays unit-testable. `ItemValidationTest` covers IDR parsing, names, and purchase URL validation.
-- `ui/home` is currently the all-items list with search/sort; `ui/collections` has collection list/detail screens; `ui/item` has detail and add/edit screens. `ui/settings` is still a placeholder. `ExampleUnitTest` and `ExampleInstrumentedTest` are scaffold tests to replace.
+- Keep balance, projection, and aggregation logic out of Compose/Android UI classes so it stays unit-testable. `ItemValidationTest` covers IDR parsing, names, and purchase URL validation; `SavingsCalculatorTest` covers ledger balances, progress, surplus, zero targets, withdrawal limits, and overflow.
+- `ui/home` is currently the all-items list with search/sort and savings progress; `ui/collections` has collection list/detail screens; `ui/item` has detail, add/edit, transaction dialog, and transaction history screens. `ui/settings` is still a placeholder. `ExampleUnitTest` and `ExampleInstrumentedTest` are scaffold tests to replace.
 
 ## Other product constraints
 

@@ -5,6 +5,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import id.my.f1zz.whenyah.domain.model.SavingsEventType
+import id.my.f1zz.whenyah.domain.savings.SavingsLedgerEntry
 import java.time.Instant
 import java.util.UUID
 
@@ -26,9 +27,9 @@ import java.util.UUID
 data class SavingsEventEntity(
     @PrimaryKey val id: UUID,
     val itemId: UUID,
-    val type: SavingsEventType,
-    val amountIdr: Long,
+    override val type: SavingsEventType,
+    override val amountIdr: Long,
     val note: String?,
     val createdAt: Instant,
     val purchaseRecordId: UUID?,
-)
+) : SavingsLedgerEntry

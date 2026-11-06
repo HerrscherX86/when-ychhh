@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import id.my.f1zz.whenyah.data.local.entity.CollectionEntity
-import id.my.f1zz.whenyah.data.local.entity.WishlistItemEntity
+import id.my.f1zz.whenyah.data.repository.WishlistItemWithSavings
 import id.my.f1zz.whenyah.data.repository.WishlistRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +16,7 @@ import javax.inject.Inject
 
 data class CollectionDetailUiState(
     val collection: CollectionEntity? = null,
-    val items: List<WishlistItemEntity> = emptyList(),
+    val items: List<WishlistItemWithSavings> = emptyList(),
     val isLoading: Boolean = true,
 )
 
@@ -33,7 +33,7 @@ class CollectionDetailViewModel @Inject constructor(
 
     val uiState: StateFlow<CollectionDetailUiState> = combine(
         repository.observeCollection(collectionId),
-        repository.observeItemsInCollection(collectionId),
+        repository.observeItemsInCollectionWithSavings(collectionId),
     ) { collection, items ->
         CollectionDetailUiState(
             collection = collection,
