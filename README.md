@@ -4,9 +4,9 @@
 
 <h1 align="center">When Yah</h1>
 
-<p align="center"><strong>Wishlist dan tracker tabungan offline — cuma IDR.</strong></p>
+<p align="center"><strong>Wishlist dan tracker tabungan offline.</strong></p>
 
-<p align="center">When Yah membantu kamu mencatat barang yang ingin dibeli, menyisihkan uang untuk tiap barang, membuat rencana nabung, dan melihat progresnya. Semuanya tanpa akun, tanpa internet, dan tanpa menghubungkan rekening bank.</p>
+<p align="center"><strong>When Yah</strong> membantu kamu mencatat barang yang ingin dibeli, menyisihkan uang untuk tiap barang, membuat rencana nabung, dan melihat progresnya. Semuanya tanpa akun, tanpa internet, dan tanpa menghubungkan rekening bank.</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/platform-Android-3DDC84?logo=android&amp;logoColor=white" alt="Platform Android" />
@@ -172,80 +172,26 @@ When Yah memakai aturan akuntansi yang ketat supaya angka tabungan tetap konsist
 ```bash
 git clone https://github.com/HerrscherX86/when-ychhh.git
 cd when-ychhh
-./gradlew :app:assembleDebug
+./gradlew :app:assembleRelease
 ```
 
 Di Windows, ganti `./gradlew` dengan `gradlew.bat`.
 
-APK debug ada di:
+Hasil build ada di:
 
 ```
-app/build/outputs/apk/debug/app-debug.apk
+app/build/outputs/apk/release/
 ```
 
-Untuk memasang ke perangkat yang terhubung:
-
-```bash
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-```
+Kalau belum ada signing config, file yang dihasilkan bernama `app-release-unsigned.apk`. Tandatangani dulu dengan keystore rilis — misalnya lewat **Build → Generate Signed Bundle / APK** di Android Studio — sebelum dipasang atau dibagikan.
 
 ---
 
-## 🧪 Test dan pemeriksaan
+## 📥 Download APK
 
-```bash
-./gradlew :app:testDebugUnitTest     # unit test host-side
-./gradlew :app:lintDebug             # Android Lint
-./gradlew :app:connectedDebugAndroidTest   # butuh device/emulator
-```
+APK rilis bisa diunduh dari halaman [Releases](https://github.com/HerrscherX86/when-ychhh/releases).
 
-Status saat ini:
-
-- **64 unit test** lulus.
-- **0 error** di Android Lint.
-- `:app:assembleDebug`, `:app:testDebugUnitTest`, dan `:app:lintDebug` semuanya hijau.
-
-Logika saldo, proyeksi rencana, pembelian, agregasi dashboard, validasi backup, dan jadwal notifikasi sengaja ditaruh di `domain/` supaya bisa diuji tanpa UI.
-
----
-
-## 🗂️ Struktur proyek
-
-```
-app/src/main/java/id/my/f1zz/whenyah/
-├── data/
-│   ├── local/          # Room: entity, DAO, database, converter
-│   ├── repository/     # wishlist, tabungan, rencana, pembelian
-│   ├── notification/   # AlarmManager scheduler, receiver, NotificationService
-│   ├── backup/         # export/import ZIP + validasi
-│   └── settings/       # DataStore
-├── domain/
-│   ├── savings/        # kalkulasi saldo dan progres
-│   ├── plan/           # proyeksi rencana nabung
-│   ├── dashboard/      # agregasi dashboard
-│   ├── notifications/  # perhitungan jadwal berikutnya
-│   ├── validation/     # validasi input dan URL
-│   └── i18n/           # AppStrings (English + Indonesia)
-├── ui/
-│   ├── home/ collections/ item/ archive/ settings/ onboarding/
-│   ├── navigation/
-│   ├── components/
-│   └── theme/
-└── di/                 # modul Hilt
-```
-
----
-
-## 🏗️ Arsitektur singkat
-
-- Single-module Android app (`:app`) dengan Jetpack Compose.
-- UI memanggil ViewModel; ViewModel memakai repository; repository memakai Room/DataStore.
-- Semua perhitungan uang dan jadwal ada di `domain/` dan diuji lewat unit test.
-- Saldo tidak pernah disimpan sebagai field mutable — selalu hasil turunan dari ledger.
-- Backup/restore memvalidasi seluruh arsip sebelum menyentuh database, lalu mengganti semua tabel dalam satu transaksi.
-- Notifikasi memakai `AlarmManager` supaya reminder tetap jalan saat aplikasi ditutup. Kebijakan battery saver OEM tetap bisa menunda pengiriman.
-
-Dokumen sumber kebenaran produk ada di [`wishlist_savings_tracker_PRD_v1.2.md`](wishlist_savings_tracker_PRD_v1.2.md). Baca §2 (keputusan terkunci), §6 (invariant akuntansi), dan §15 (open decisions) sebelum mengubah perilaku.
+Kalau belum ada rilis yang tersedia, build sendiri dari source seperti di atas.
 
 ---
 
@@ -263,25 +209,6 @@ Dokumen sumber kebenaran produk ada di [`wishlist_savings_tracker_PRD_v1.2.md`](
 ## 📌 Status
 
 Versi **1.0** — initial release untuk pemakaian pribadi. Belum tersedia di Google Play.
-
-Yang masih mungkin dikerjakan:
-
-- Publikasi ke Google Play.
-- Pengujian notifikasi di lebih banyak perangkat/ROM, terutama vendor dengan battery saver agresif.
-- Panduan tambahan di dalam aplikasi untuk auto-start/background activity per vendor.
-- Penyempurnaan animasi dan aksesibilitas.
-
----
-
-## 🤝 Kontribusi
-
-Issue dan pull request dipersilakan. Sebelum mengubah perilaku produk:
-
-1. Baca PRD, terutama keputusan terkunci dan invariant akuntansi.
-2. Jaga uang tetap `Long`/`INTEGER` dalam IDR — jangan pakai `Double`/`Float`.
-3. Jalankan `./gradlew :app:testDebugUnitTest` dan `./gradlew :app:lintDebug`.
-4. Tambahkan unit test untuk logika domain baru.
-5. Jangan menambahkan dependency baru tanpa alasan yang jelas.
 
 ---
 
