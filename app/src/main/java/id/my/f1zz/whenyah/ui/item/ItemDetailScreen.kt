@@ -1,6 +1,8 @@
 package id.my.f1zz.whenyah.ui.item
 
 import android.content.Intent
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,6 +52,7 @@ import id.my.f1zz.whenyah.ui.components.MarkPurchasedDialog
 import id.my.f1zz.whenyah.ui.components.SavingsEventRow
 import id.my.f1zz.whenyah.ui.components.TransactionDialog
 import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
+import id.my.f1zz.whenyah.ui.theme.AppMotion
 import id.my.f1zz.whenyah.ui.util.formatDate
 import id.my.f1zz.whenyah.ui.util.formatDateTime
 import id.my.f1zz.whenyah.ui.util.formatIdr
@@ -306,6 +309,14 @@ private fun SavingsCard(
     onWithdraw: () -> Unit,
 ) {
     val strings = LocalAppStrings.current
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress,
+        animationSpec = tween(
+            durationMillis = AppMotion.SlowMillis,
+            easing = AppMotion.StandardEasing,
+        ),
+        label = "itemDetailProgress",
+    )
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -329,7 +340,7 @@ private fun SavingsCard(
                 )
             }
             LinearProgressIndicator(
-                progress = { progress },
+                progress = { animatedProgress },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(8.dp),

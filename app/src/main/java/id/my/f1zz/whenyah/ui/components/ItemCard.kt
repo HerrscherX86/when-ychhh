@@ -1,5 +1,7 @@
 package id.my.f1zz.whenyah.ui.components
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,6 +22,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import id.my.f1zz.whenyah.data.local.entity.WishlistItemEntity
 import id.my.f1zz.whenyah.domain.savings.SavingsSummary
 import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
+import id.my.f1zz.whenyah.ui.theme.AppMotion
 import id.my.f1zz.whenyah.ui.util.formatIdr
 import kotlin.math.roundToInt
 
@@ -45,6 +49,14 @@ fun ItemCard(
 ) {
     val strings = LocalAppStrings.current
     val isGoalReached = savings?.isGoalReached == true
+    val animatedProgress by animateFloatAsState(
+        targetValue = savings?.progress ?: 0f,
+        animationSpec = tween(
+            durationMillis = AppMotion.SlowMillis,
+            easing = AppMotion.StandardEasing,
+        ),
+        label = "itemProgress",
+    )
     val progressColor = if (isGoalReached) {
         MaterialTheme.colorScheme.tertiary
     } else {
@@ -132,7 +144,7 @@ fun ItemCard(
                     )
 
                     LinearProgressIndicator(
-                        progress = { savings.progress },
+                        progress = { animatedProgress },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(8.dp)

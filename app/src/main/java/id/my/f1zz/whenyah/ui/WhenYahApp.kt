@@ -1,5 +1,8 @@
 package id.my.f1zz.whenyah.ui
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -12,7 +15,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -33,10 +40,12 @@ import id.my.f1zz.whenyah.ui.home.ActivityScreen
 import id.my.f1zz.whenyah.ui.home.HomeScreen
 import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
 import id.my.f1zz.whenyah.ui.item.ItemDetailScreen
+import id.my.f1zz.whenyah.ui.navigation.LocalSetTopBarBackHandler
 import id.my.f1zz.whenyah.ui.item.ItemEditorScreen
 import id.my.f1zz.whenyah.ui.item.SavingsPlanScreen
 import id.my.f1zz.whenyah.ui.item.TransactionHistoryScreen
 import id.my.f1zz.whenyah.ui.settings.SettingsScreen
+import id.my.f1zz.whenyah.ui.theme.AppMotion
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,6 +60,26 @@ fun WhenYahApp() {
         currentDestination?.hierarchy?.any { it.route == destination.route } == true
     }
     val isTopLevel = currentTopLevelDestination != null
+    var topBarBackHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+    val tabEnter = fadeIn(
+        animationSpec = tween(AppMotion.FastMillis, easing = AppMotion.StandardEasing)
+    )
+    val tabExit = fadeOut(
+        animationSpec = tween(AppMotion.FastMillis, easing = AppMotion.StandardEasing)
+    )
+    val detailEnter = fadeIn(
+        animationSpec = tween(AppMotion.MediumMillis, easing = AppMotion.StandardEasing)
+    )
+    val detailExit = fadeOut(
+        animationSpec = tween(AppMotion.MediumMillis, easing = AppMotion.StandardEasing)
+    )
+    val detailPopEnter = fadeIn(
+        animationSpec = tween(AppMotion.MediumMillis, easing = AppMotion.StandardEasing)
+    )
+    val detailPopExit = fadeOut(
+        animationSpec = tween(AppMotion.MediumMillis, easing = AppMotion.StandardEasing)
+    )
 
     val title = when (currentRoute) {
         Routes.ITEM_DETAIL -> strings.titleItemDetails
@@ -71,7 +100,11 @@ fun WhenYahApp() {
                 title = { Text(title) },
                 navigationIcon = {
                     if (!isTopLevel) {
-                        IconButton(onClick = { navController.navigateUp() }) {
+                        IconButton(
+                            onClick = {
+                                topBarBackHandler?.invoke() ?: navController.navigateUp()
+                            }
+                        ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = strings.back,
@@ -106,12 +139,25 @@ fun WhenYahApp() {
             }
         },
     ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = TopLevelDestination.HOME.route,
-            modifier = Modifier.padding(innerPadding),
+        CompositionLocalProvider(
+            LocalSetTopBarBackHandler provides { handler -> topBarBackHandler = handler }
         ) {
-            composable(TopLevelDestination.HOME.route) {
+            NavHost(
+                navController = navController,
+                startDestination = TopLevelDestination.HOME.route,
+                modifier = Modifier.padding(innerPadding),
+                enterTransition = { detailEnter },
+                exitTransition = { detailExit },
+                popEnterTransition = { detailPopEnter },
+                popExitTransition = { detailPopExit },
+            ) {
+            composable(
+                route = TopLevelDestination.HOME.route,
+                enterTransition = { tabEnter },
+                exitTransition = { tabExit },
+                popEnterTransition = { tabEnter },
+                popExitTransition = { tabExit },
+            ) {
                 HomeScreen(
                     onAddItem = { navController.navigate(Routes.itemAdd()) },
                     onItemClick = { itemId ->
@@ -124,14 +170,26 @@ fun WhenYahApp() {
                     onOpenArchive = { navController.navigate(Routes.ARCHIVE) },
                 )
             }
-            composable(TopLevelDestination.COLLECTIONS.route) {
+            composable(
+                route = TopLevelDestination.COLLECTIONS.route,
+                enterTransition = { tabEnter },
+                exitTransition = { tabExit },
+                popEnterTransition = { tabEnter },
+                popExitTransition = { tabExit },
+            ) {
                 CollectionsScreen(
                     onCollectionClick = { collectionId ->
                         navController.navigate(Routes.collectionDetail(collectionId))
                     },
                 )
             }
-            composable(TopLevelDestination.SETTINGS.route) {
+            composable(
+                route = TopLevelDestination.SETTINGS.route,
+                enterTransition = { tabEnter },
+                exitTransition = { tabExit },
+                popEnterTransition = { tabEnter },
+                popExitTransition = { tabExit },
+            ) {
                 SettingsScreen(
                     onOpenArchive = { navController.navigate(Routes.ARCHIVE) },
                 )
@@ -248,6 +306,7 @@ fun WhenYahApp() {
                             navController.navigate(Routes.itemDetail(itemId))
                         }
                     },
+                    onBack = { navController.popBackStack() },
                 )
             }
 
@@ -259,7 +318,9 @@ fun WhenYahApp() {
             ) {
                 ItemEditorScreen(
                     onSaved = { navController.popBackStack() },
+                    onBack = { navController.popBackStack() },
                 )
+            }
             }
         }
     }

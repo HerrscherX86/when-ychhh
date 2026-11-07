@@ -21,6 +21,8 @@ data class ItemFormState(
     val isEditing: Boolean = false,
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
+    val isImageLoading: Boolean = false,
+    val isDirty: Boolean = false,
     val name: String = "",
     val price: String = "",
     val category: String = "",
@@ -33,6 +35,7 @@ data class ItemFormState(
     val priceError: String? = null,
     val purchaseUrlError: String? = null,
     val saveError: String? = null,
+    val collectionError: String? = null,
     val savedItemId: UUID? = null,
 )
 
@@ -98,43 +101,96 @@ class ItemEditorViewModel @Inject constructor(
     }
 
     fun onNameChange(value: String) {
-        _uiState.update { it.copy(name = value, nameError = null, saveError = null) }
+        _uiState.update {
+            it.copy(name = value, nameError = null, saveError = null, isDirty = true)
+        }
     }
 
     fun onPriceChange(value: String) {
         val digitsOnly = value.filter(Char::isDigit).take(18)
-        _uiState.update { it.copy(price = digitsOnly, priceError = null, saveError = null) }
+        _uiState.update {
+            it.copy(price = digitsOnly, priceError = null, saveError = null, isDirty = true)
+        }
     }
 
     fun onCategoryChange(value: String) {
-        _uiState.update { it.copy(category = value, saveError = null) }
+        _uiState.update { it.copy(category = value, saveError = null, isDirty = true) }
     }
 
     fun onNotesChange(value: String) {
-        _uiState.update { it.copy(notes = value, saveError = null) }
+        _uiState.update { it.copy(notes = value, saveError = null, isDirty = true) }
     }
 
     fun onPurchaseUrlChange(value: String) {
-        _uiState.update { it.copy(purchaseUrl = value, purchaseUrlError = null, saveError = null) }
+        _uiState.update {
+            it.copy(
+                purchaseUrl = value,
+                purchaseUrlError = null,
+                saveError = null,
+                isDirty = true,
+            )
+        }
     }
 
     fun onCollectionChange(value: UUID?) {
-        _uiState.update { it.copy(collectionId = value, saveError = null) }
+        _uiState.update {
+            it.copy(
+                collectionId = value,
+                collectionError = null,
+                saveError = null,
+                isDirty = true,
+            )
+        }
+    }
+
+    fun createCollection(name: String) {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return
+
+        viewModelScope.launch {
+            runCatching { repository.createCollection(trimmed) }
+                .onSuccess { id ->
+                    _uiState.update {
+                        it.copy(
+                            collectionId = id,
+                            collectionError = null,
+                            saveError = null,
+                            isDirty = true,
+                        )
+                    }
+                }
+                .onFailure {
+                    _uiState.update {
+                        it.copy(
+                            collectionError = languageStore.strings().couldNotCreateCollection,
+                        )
+                    }
+                }
+        }
     }
 
     fun onImagePicked(uri: Uri) {
+        _uiState.update { it.copy(isImageLoading = true, saveError = null) }
         viewModelScope.launch {
             runCatching { repository.copyImage(uri) }
                 .onSuccess { path ->
                     pendingImagePath?.let { repository.deleteImage(it) }
                     pendingImagePath = path
                     _uiState.update {
-                        it.copy(imageRelativePath = path, saveError = null)
+                        it.copy(
+                            imageRelativePath = path,
+                            isImageLoading = false,
+                            saveError = null,
+                            isDirty = true,
+                        )
                     }
                 }
                 .onFailure {
                     _uiState.update {
-                        it.copy(saveError = languageStore.strings().couldNotLoadImage)
+                        it.copy(
+                            isImageLoading = false,
+                            saveError = languageStore.strings().couldNotLoadImage,
+                        )
                     }
                 }
         }
@@ -142,14 +198,20 @@ class ItemEditorViewModel @Inject constructor(
 
     fun onRemoveImage() {
         val current = _uiState.value.imageRelativePath
-        if (current != null && current != originalImagePath) {
+        if (current == null) return
+
+        if (current != originalImagePath) {
             pendingImagePath = null
             viewModelScope.launch { repository.deleteImage(current) }
         }
-        _uiState.update { it.copy(imageRelativePath = null, saveError = null) }
+        _uiState.update {
+            it.copy(imageRelativePath = null, saveError = null, isDirty = true)
+        }
     }
 
     fun save() {
+        if (_uiState.value.isSaving || _uiState.value.isImageLoading) return
+
         val strings = languageStore.strings()
         val state = _uiState.value
         val nameError = if (ItemValidation.isValidName(state.name)) {
@@ -198,7 +260,11 @@ class ItemEditorViewModel @Inject constructor(
             }.onSuccess { savedId ->
                 pendingImagePath = null
                 _uiState.update {
-                    it.copy(isSaving = false, savedItemId = savedId)
+                    it.copy(
+                        isSaving = false,
+                        isDirty = false,
+                        savedItemId = savedId,
+                    )
                 }
             }.onFailure {
                 _uiState.update {

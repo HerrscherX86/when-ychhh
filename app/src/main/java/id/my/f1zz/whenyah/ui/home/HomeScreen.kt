@@ -1,5 +1,8 @@
 package id.my.f1zz.whenyah.ui.home
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -30,7 +34,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -55,7 +58,10 @@ import id.my.f1zz.whenyah.domain.dashboard.DashboardSummary
 import id.my.f1zz.whenyah.domain.model.SavingsEventType
 import id.my.f1zz.whenyah.ui.components.EmptyState
 import id.my.f1zz.whenyah.ui.components.ItemCard
+import id.my.f1zz.whenyah.ui.components.ScrollAwareAddFab
+import id.my.f1zz.whenyah.ui.components.rememberFabVisibility
 import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
+import id.my.f1zz.whenyah.ui.theme.AppMotion
 import id.my.f1zz.whenyah.ui.util.formatDate
 import id.my.f1zz.whenyah.ui.util.formatIdr
 import id.my.f1zz.whenyah.ui.util.formatShortDate
@@ -74,6 +80,8 @@ fun HomeScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val strings = LocalAppStrings.current
+    val listState = rememberLazyListState()
+    val fabVisible by rememberFabVisibility(listState)
 
     Box(modifier = modifier.fillMaxSize()) {
         if (state.isLoading) {
@@ -82,6 +90,7 @@ fun HomeScreen(
             }
         } else {
             LazyColumn(
+                state = listState,
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
                     start = 20.dp,
@@ -123,6 +132,7 @@ fun HomeScreen(
                         UpcomingPlanCard(
                             upcoming = upcoming,
                             onClick = { onPlanClick(upcoming.plan.itemId) },
+                            modifier = Modifier.animateItem(),
                         )
                     }
                 }
@@ -199,23 +209,19 @@ fun HomeScreen(
                             savings = entry.savings,
                             collectionName = state.collectionNames[entry.item.collectionId],
                             onClick = { onItemClick(entry.item.id) },
+                            modifier = Modifier.animateItem(),
                         )
                     }
                 }
             }
         }
 
-        FloatingActionButton(
+        ScrollAwareAddFab(
+            visible = fabVisible,
             onClick = onAddItem,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(20.dp),
-            shape = RoundedCornerShape(20.dp),
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        ) {
-            Icon(imageVector = Icons.Filled.Add, contentDescription = strings.addItemDescription)
-        }
+            contentDescription = strings.addItemDescription,
+            modifier = Modifier.align(Alignment.BottomEnd),
+        )
     }
 }
 
@@ -225,6 +231,14 @@ private fun OverviewCard(
     onOpenArchive: () -> Unit,
 ) {
     val strings = LocalAppStrings.current
+    val animatedProgress by animateFloatAsState(
+        targetValue = summary.overallProgress,
+        animationSpec = tween(
+            durationMillis = AppMotion.SlowMillis,
+            easing = AppMotion.StandardEasing,
+        ),
+        label = "overviewProgress",
+    )
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
@@ -273,7 +287,7 @@ private fun OverviewCard(
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 LinearProgressIndicator(
-                    progress = { summary.overallProgress },
+                    progress = { animatedProgress },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(10.dp)
@@ -384,7 +398,14 @@ private fun CountBadge(count: Int) {
 @Composable
 private fun RecentActivityCard(activities: List<DashboardActivity>) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .animateContentSize(
+                animationSpec = tween(
+                    durationMillis = AppMotion.MediumMillis,
+                    easing = AppMotion.StandardEasing,
+                )
+            ),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -474,11 +495,12 @@ private fun HomeActivityRow(activity: DashboardActivity) {
 private fun UpcomingPlanCard(
     upcoming: DashboardUpcomingPlan,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val strings = LocalAppStrings.current
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -589,6 +611,7 @@ private fun NearestGoalsRow(
             NearestGoalCard(
                 entry = entry,
                 onClick = { onItemClick(entry.item.id) },
+                modifier = Modifier.animateItem(),
             )
         }
     }
@@ -598,11 +621,20 @@ private fun NearestGoalsRow(
 private fun NearestGoalCard(
     entry: WishlistItemWithSavings,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val strings = LocalAppStrings.current
+    val animatedProgress by animateFloatAsState(
+        targetValue = entry.savings.progress,
+        animationSpec = tween(
+            durationMillis = AppMotion.SlowMillis,
+            easing = AppMotion.StandardEasing,
+        ),
+        label = "nearestGoalProgress",
+    )
     Card(
         onClick = onClick,
-        modifier = Modifier.width(260.dp),
+        modifier = modifier.width(260.dp),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -625,7 +657,7 @@ private fun NearestGoalCard(
                 color = MaterialTheme.colorScheme.primary,
             )
             LinearProgressIndicator(
-                progress = { entry.savings.progress },
+                progress = { animatedProgress },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(8.dp)

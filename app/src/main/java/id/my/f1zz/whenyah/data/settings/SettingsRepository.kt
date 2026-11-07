@@ -27,7 +27,7 @@ private val Context.settingsDataStore by preferencesDataStore(name = "settings")
 class SettingsRepository @Inject constructor(
     @param:ApplicationContext private val context: Context,
 ) {
-    val settings: Flow<AppSettings> = context.settingsDataStore.data
+    private val preferencesFlow = context.settingsDataStore.data
         .catch { failure ->
             if (failure is IOException) {
                 emit(emptyPreferences())
@@ -35,6 +35,8 @@ class SettingsRepository @Inject constructor(
                 throw failure
             }
         }
+
+    val settings: Flow<AppSettings> = preferencesFlow
         .map { preferences ->
             AppSettings(
                 language = preferences[Keys.LANGUAGE]
@@ -58,7 +60,14 @@ class SettingsRepository @Inject constructor(
             )
         }
 
+    val hasCompletedOnboarding: Flow<Boolean> = preferencesFlow
+        .map { preferences -> preferences[Keys.ONBOARDING_COMPLETED] ?: false }
+
     suspend fun currentSettings(): AppSettings = settings.first()
+
+    suspend fun completeOnboarding() {
+        context.settingsDataStore.edit { it[Keys.ONBOARDING_COMPLETED] = true }
+    }
 
     suspend fun replaceSettings(settings: AppSettings) {
         context.settingsDataStore.edit { preferences ->
@@ -106,6 +115,7 @@ class SettingsRepository @Inject constructor(
     }
 
     private object Keys {
+        val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val LANGUAGE = stringPreferencesKey("language")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val ACCENT_COLOR = stringPreferencesKey("accent_color")

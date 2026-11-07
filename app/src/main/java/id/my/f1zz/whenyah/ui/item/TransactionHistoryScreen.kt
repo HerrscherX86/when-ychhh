@@ -1,5 +1,8 @@
 package id.my.f1zz.whenyah.ui.item
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,7 +28,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import id.my.f1zz.whenyah.ui.components.EmptyState
 import id.my.f1zz.whenyah.ui.components.SavingsEventRow
+import id.my.f1zz.whenyah.ui.components.ScreenPhase
 import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
+import id.my.f1zz.whenyah.ui.theme.AppMotion
 import id.my.f1zz.whenyah.ui.util.formatIdr
 
 @Composable
@@ -36,78 +41,102 @@ fun TransactionHistoryScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val strings = LocalAppStrings.current
     val item = state.item
+    val animatedProgress by animateFloatAsState(
+        targetValue = state.savings.progress,
+        animationSpec = tween(
+            durationMillis = AppMotion.SlowMillis,
+            easing = AppMotion.StandardEasing,
+        ),
+        label = "historyProgress",
+    )
+    val phase = when {
+        state.isLoading -> ScreenPhase.Loading
+        item == null -> ScreenPhase.Empty
+        else -> ScreenPhase.Content
+    }
 
-    when {
-        state.isLoading -> {
-            Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        }
-
-        item == null -> {
-            Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                EmptyState(
-                    title = strings.itemNotFound,
-                    message = strings.itemMayBeDeleted,
-                )
-            }
-        }
-
-        else -> {
-            LazyColumn(
-                modifier = modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                item {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Text(
-                                text = item.name,
-                                style = MaterialTheme.typography.titleMedium,
-                            )
-                            Text(
-                                text = formatIdr(state.savings.availableIdr),
-                                style = MaterialTheme.typography.headlineMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                            Text(
-                                text = strings.ofTarget(formatIdr(item.targetPriceIdr)),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            LinearProgressIndicator(
-                                progress = { state.savings.progress },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(8.dp),
-                            )
-                        }
-                    }
+    Crossfade(
+        targetState = phase,
+        animationSpec = tween(
+            durationMillis = AppMotion.MediumMillis,
+            easing = AppMotion.StandardEasing,
+        ),
+        label = "historyPhase",
+    ) { targetPhase ->
+        when (targetPhase) {
+            ScreenPhase.Loading -> {
+                Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
                 }
+            }
 
-                item {
-                    Text(
-                        text = strings.allTransactions,
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(top = 8.dp),
+            ScreenPhase.Empty -> {
+                Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    EmptyState(
+                        title = strings.itemNotFound,
+                        message = strings.itemMayBeDeleted,
                     )
                 }
+            }
 
-                if (state.events.isEmpty()) {
+            ScreenPhase.Content -> item?.let { loadedItem ->
+                LazyColumn(
+                    modifier = modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     item {
-                        EmptyState(
-                            title = strings.noTransactionsYet,
-                            message = strings.noTransactionsMessage,
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Text(
+                                    text = loadedItem.name,
+                                    style = MaterialTheme.typography.titleMedium,
+                                )
+                                Text(
+                                    text = formatIdr(state.savings.availableIdr),
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                                Text(
+                                    text = strings.ofTarget(formatIdr(loadedItem.targetPriceIdr)),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                LinearProgressIndicator(
+                                    progress = { animatedProgress },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(8.dp),
+                                )
+                            }
+                        }
+                    }
+
+                    item {
+                        Text(
+                            text = strings.allTransactions,
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(top = 8.dp),
                         )
                     }
-                } else {
-                    items(items = state.events, key = { it.id }) { event ->
-                        SavingsEventRow(event = event)
-                        HorizontalDivider()
+
+                    if (state.events.isEmpty()) {
+                        item {
+                            EmptyState(
+                                title = strings.noTransactionsYet,
+                                message = strings.noTransactionsMessage,
+                            )
+                        }
+                    } else {
+                        items(items = state.events, key = { it.id }) { event ->
+                            Column(modifier = Modifier.animateItem()) {
+                                SavingsEventRow(event = event)
+                                HorizontalDivider()
+                            }
+                        }
                     }
                 }
             }

@@ -7,6 +7,16 @@ object IndonesianStrings : AppStrings {
     override val locale: Locale = Locale.forLanguageTag("in-ID")
 
     override val appName = "When Yah"
+    override val onboardingTitle1 = "Wishlist dulu,\nnabungnya diatur."
+    override val onboardingBody1 = "When Yah nyimpen wishlist, tabungan, dan riwayat belanja kamu di satu tempat — offline, privat, dan selalu pakai IDR."
+    override val onboardingTitle2 = "Nabung per item."
+    override val onboardingBody2 = "Set target, catat nabung atau tarik, terus lihat sisa yang masih perlu dikumpulin. Gak bakal ketuker sama item lain."
+    override val onboardingTitle3 = "Bikin rencana.\nPantau progressnya."
+    override val onboardingBody3 = "Pakai rencana harian, mingguan, atau bulanan buat ngira-ngira kapan target kamu kelar."
+    override val onboardingNext = "Lanjut"
+    override val onboardingStart = "Gas mulai"
+    override val onboardingSkip = "Lewati"
+    override val onboardingBack = "Balik"
     override val back = "Balik"
     override val cancel = "Batal"
     override val delete = "Hapus"
@@ -71,6 +81,9 @@ object IndonesianStrings : AppStrings {
     override val noActivityYet = "Belum ada aktivitas"
     override val noActivityMessage = "Nabung atau tarik dari item aktif bakal muncul di sini."
 
+    override val collectionsOverviewTitle = "Rapihin wishlist kamu"
+    override val organizedItemsLabel = "Item dirapihin"
+    override val moreActions = "Aksi lainnya"
     override val noCollectionsYet = "Belum ada koleksi"
     override val noCollectionsMessage = "Bikin koleksi buat ngelompokin wishlist kamu."
     override val collectionNameLabel = "Nama koleksi"
@@ -134,6 +147,21 @@ object IndonesianStrings : AppStrings {
     override val couldNotUpdatePlan = "Gagal update rencananya"
     override val couldNotDeletePlan = "Gagal hapus rencananya"
 
+    override val sectionItemInfo = "Informasi Item"
+    override val sectionOrganization = "Organisasi"
+    override val sectionAdditionalDetails = "Detail Tambahan"
+    override val itemPhoto = "Foto item"
+    override val tapToChooseImage = "Ketuk buat pilih gambar"
+    override val removeImage = "Hapus gambar"
+    override val showDetails = "Tampilkan detail tambahan"
+    override val hideDetails = "Sembunyikan detail tambahan"
+    override val chooseCollection = "Pilih koleksi"
+    override val createCollectionAction = "Bikin koleksi baru"
+    override val unsavedChangesTitle = "Buang perubahan?"
+    override val unsavedChangesMessage = "Perubahan kamu belum disimpan. Yakin mau keluar?"
+    override val keepEditing = "Lanjut edit"
+    override val discardChanges = "Buang"
+    override val saving = "Lagi nyimpen…"
     override val selectedItemImage = "Gambar item yang dipilih"
     override val chooseImage = "Pilih gambar"
     override val changeImage = "Ganti gambar"
@@ -149,6 +177,7 @@ object IndonesianStrings : AppStrings {
     override val enterValidIdr = "Isi nominal IDR yang valid, angka aja ya"
     override val enterValidUrl = "Isi URL http(s) yang valid"
     override val couldNotSaveItem = "Gagal nyimpen itemnya"
+    override val couldNotCreateCollection = "Gagal bikin koleksinya"
 
     override val allTransactions = "Semua transaksi"
     override val noTransactionsYet = "Belum ada transaksi"
@@ -311,4 +340,7 @@ object IndonesianStrings : AppStrings {
         PlanFrequency.WEEKLY -> "Mingguan"
         PlanFrequency.MONTHLY -> "Bulanan"
     }
+
+    override fun pageIndicator(current: Int, total: Int): String =
+        "Halaman $current dari $total"
 }

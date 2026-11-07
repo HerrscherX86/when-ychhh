@@ -10,6 +10,13 @@ import java.util.Locale
 
 fun formatIdr(amount: Long): String = domainFormatIdr(amount)
 
+fun formatIdrDigits(digits: String): String =
+    if (digits.length <= 3) {
+        digits
+    } else {
+        digits.reversed().chunked(3).joinToString(".").reversed()
+    }
+
 fun formatDateTime(
     instant: Instant,
     locale: Locale = Locale.getDefault(),

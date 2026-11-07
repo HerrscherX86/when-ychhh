@@ -7,6 +7,16 @@ interface AppStrings {
     val locale: Locale
 
     val appName: String
+    val onboardingTitle1: String
+    val onboardingBody1: String
+    val onboardingTitle2: String
+    val onboardingBody2: String
+    val onboardingTitle3: String
+    val onboardingBody3: String
+    val onboardingNext: String
+    val onboardingStart: String
+    val onboardingSkip: String
+    val onboardingBack: String
     val back: String
     val cancel: String
     val delete: String
@@ -71,6 +81,9 @@ interface AppStrings {
     val noActivityYet: String
     val noActivityMessage: String
 
+    val collectionsOverviewTitle: String
+    val organizedItemsLabel: String
+    val moreActions: String
     val noCollectionsYet: String
     val noCollectionsMessage: String
     val collectionNameLabel: String
@@ -134,6 +147,21 @@ interface AppStrings {
     val couldNotUpdatePlan: String
     val couldNotDeletePlan: String
 
+    val sectionItemInfo: String
+    val sectionOrganization: String
+    val sectionAdditionalDetails: String
+    val itemPhoto: String
+    val tapToChooseImage: String
+    val removeImage: String
+    val showDetails: String
+    val hideDetails: String
+    val chooseCollection: String
+    val createCollectionAction: String
+    val unsavedChangesTitle: String
+    val unsavedChangesMessage: String
+    val keepEditing: String
+    val discardChanges: String
+    val saving: String
     val selectedItemImage: String
     val chooseImage: String
     val changeImage: String
@@ -149,6 +177,7 @@ interface AppStrings {
     val enterValidIdr: String
     val enterValidUrl: String
     val couldNotSaveItem: String
+    val couldNotCreateCollection: String
 
     val allTransactions: String
     val noTransactionsYet: String
@@ -262,6 +291,7 @@ interface AppStrings {
     fun goalNotificationMessage(saved: String, target: String): String
     fun summaryNotificationMessage(active: Int, saved: String, funded: Int): String
     fun planFrequency(frequency: PlanFrequency): String
+    fun pageIndicator(current: Int, total: Int): String
 }
 
 object AppStringsFactory {

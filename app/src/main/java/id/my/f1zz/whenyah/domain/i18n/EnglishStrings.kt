@@ -7,6 +7,16 @@ object EnglishStrings : AppStrings {
     override val locale: Locale = Locale.ENGLISH
 
     override val appName = "When Yah"
+    override val onboardingTitle1 = "Wishlist first,\nsavings sorted."
+    override val onboardingBody1 = "When Yah keeps your wishlist, savings, and purchase history in one calm place — offline, private, and always in IDR."
+    override val onboardingTitle2 = "Save item by item."
+    override val onboardingBody2 = "Set a target, record deposits and withdrawals, and see exactly what's left without mixing one goal with another."
+    override val onboardingTitle3 = "Make a plan.\nWatch it happen."
+    override val onboardingBody3 = "Use daily, weekly, or monthly contributions to estimate your finish date, then check in whenever you like."
+    override val onboardingNext = "Next"
+    override val onboardingStart = "Let's go"
+    override val onboardingSkip = "Skip"
+    override val onboardingBack = "Back"
     override val back = "Back"
     override val cancel = "Cancel"
     override val delete = "Delete"
@@ -71,6 +81,9 @@ object EnglishStrings : AppStrings {
     override val noActivityYet = "No activity yet"
     override val noActivityMessage = "Deposits and withdrawals from active items will appear here."
 
+    override val collectionsOverviewTitle = "Organize your wishlist"
+    override val organizedItemsLabel = "Items organized"
+    override val moreActions = "More actions"
     override val noCollectionsYet = "No collections yet"
     override val noCollectionsMessage = "Create a collection to group your wishlist items."
     override val collectionNameLabel = "Collection name"
@@ -134,6 +147,21 @@ object EnglishStrings : AppStrings {
     override val couldNotUpdatePlan = "Could not update the plan"
     override val couldNotDeletePlan = "Could not delete the plan"
 
+    override val sectionItemInfo = "Item information"
+    override val sectionOrganization = "Organization"
+    override val sectionAdditionalDetails = "Additional details"
+    override val itemPhoto = "Item photo"
+    override val tapToChooseImage = "Tap to choose an image"
+    override val removeImage = "Remove image"
+    override val showDetails = "Show additional details"
+    override val hideDetails = "Hide additional details"
+    override val chooseCollection = "Choose collection"
+    override val createCollectionAction = "Create new collection"
+    override val unsavedChangesTitle = "Discard changes?"
+    override val unsavedChangesMessage = "You have unsaved changes. Leave this screen anyway?"
+    override val keepEditing = "Keep editing"
+    override val discardChanges = "Discard"
+    override val saving = "Saving…"
     override val selectedItemImage = "Selected item image"
     override val chooseImage = "Choose image"
     override val changeImage = "Change image"
@@ -149,6 +177,7 @@ object EnglishStrings : AppStrings {
     override val enterValidIdr = "Enter a valid IDR amount using digits only"
     override val enterValidUrl = "Enter a valid http(s) URL"
     override val couldNotSaveItem = "Could not save the item"
+    override val couldNotCreateCollection = "Could not create the collection"
 
     override val allTransactions = "All transactions"
     override val noTransactionsYet = "No transactions yet"
@@ -315,4 +344,7 @@ object EnglishStrings : AppStrings {
         PlanFrequency.WEEKLY -> "Weekly"
         PlanFrequency.MONTHLY -> "Monthly"
     }
+
+    override fun pageIndicator(current: Int, total: Int): String =
+        "Page $current of $total"
 }
