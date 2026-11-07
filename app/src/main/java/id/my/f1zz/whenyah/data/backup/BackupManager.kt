@@ -192,7 +192,7 @@ class BackupManager @Inject constructor(
                     imagePaths.values
                         .map { File(context.filesDir, it) }
                         .forEach { it.delete() }
-                    runCatching { reminderCoordinator.syncAllSchedules(force = true) }
+                    runCatching { reminderCoordinator.syncAllSchedules() }
                     throw failure
                 }
 
@@ -204,7 +204,7 @@ class BackupManager @Inject constructor(
                 val settingsApplied = runCatching {
                     settingsRepository.replaceSettings(validated.settings)
                 }.isSuccess
-                runCatching { reminderCoordinator.syncAllSchedules(force = true) }
+                runCatching { reminderCoordinator.syncAllSchedules() }
 
                     BackupRestoreResult(
                         itemCount = newItems.size,

@@ -68,17 +68,18 @@ fun WhenYahApp() {
     val tabExit = fadeOut(
         animationSpec = tween(AppMotion.FastMillis, easing = AppMotion.StandardEasing)
     )
-    val detailEnter = fadeIn(
-        animationSpec = tween(AppMotion.MediumMillis, easing = AppMotion.StandardEasing)
+    val detailFadeIn = fadeIn(
+        animationSpec = tween(
+            durationMillis = AppMotion.FadeInMillis,
+            delayMillis = AppMotion.FadeOutMillis,
+            easing = AppMotion.FadeInEasing,
+        )
     )
-    val detailExit = fadeOut(
-        animationSpec = tween(AppMotion.MediumMillis, easing = AppMotion.StandardEasing)
-    )
-    val detailPopEnter = fadeIn(
-        animationSpec = tween(AppMotion.MediumMillis, easing = AppMotion.StandardEasing)
-    )
-    val detailPopExit = fadeOut(
-        animationSpec = tween(AppMotion.MediumMillis, easing = AppMotion.StandardEasing)
+    val detailFadeOut = fadeOut(
+        animationSpec = tween(
+            durationMillis = AppMotion.FadeOutMillis,
+            easing = AppMotion.FadeOutEasing,
+        )
     )
 
     val title = when (currentRoute) {
@@ -146,10 +147,10 @@ fun WhenYahApp() {
                 navController = navController,
                 startDestination = TopLevelDestination.HOME.route,
                 modifier = Modifier.padding(innerPadding),
-                enterTransition = { detailEnter },
-                exitTransition = { detailExit },
-                popEnterTransition = { detailPopEnter },
-                popExitTransition = { detailPopExit },
+                enterTransition = { detailFadeIn },
+                exitTransition = { detailFadeOut },
+                popEnterTransition = { detailFadeIn },
+                popExitTransition = { detailFadeOut },
             ) {
             composable(
                 route = TopLevelDestination.HOME.route,

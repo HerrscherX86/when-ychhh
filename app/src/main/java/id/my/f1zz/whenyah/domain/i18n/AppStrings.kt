@@ -219,6 +219,9 @@ interface AppStrings {
     val enableNotifications: String
     val permissionDenied: String
     val notificationBestEffort: String
+    val exactRemindersTitle: String
+    val exactRemindersHelp: String
+    val allowExactReminders: String
     val goalNotifications: String
     val goalNotificationsHelp: String
     val contributionReminderHelp: String

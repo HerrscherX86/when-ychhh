@@ -76,7 +76,7 @@ class ArchivedItemDetailViewModel @Inject constructor(
             val result = purchaseRepository.restoreItem(itemId)
             if (result.isSuccess) {
                 runCatching {
-                    reminderCoordinator.syncPlanReminderForItem(itemId, force = true)
+                    reminderCoordinator.syncPlanReminderForItem(itemId)
                 }
                 _restored.value = true
             } else {

@@ -148,7 +148,7 @@ class SavingsPlanViewModel @Inject constructor(
                 )
             }.onSuccess {
                 runCatching {
-                    reminderCoordinator.syncPlanReminderForItem(itemId, force = true)
+                    reminderCoordinator.syncPlanReminderForItem(itemId)
                 }
                 _uiState.update { current ->
                     current.copy(isSaving = false, saved = true)
@@ -172,7 +172,7 @@ class SavingsPlanViewModel @Inject constructor(
                 savingsPlanRepository.setActive(itemId, active = !plan.active)
             }.onSuccess {
                 runCatching {
-                    reminderCoordinator.syncPlanReminderForItem(itemId, force = true)
+                    reminderCoordinator.syncPlanReminderForItem(itemId)
                 }
                 _uiState.update { state ->
                     state.copy(plan = plan.copy(active = !plan.active), error = null)
@@ -191,7 +191,7 @@ class SavingsPlanViewModel @Inject constructor(
                 savingsPlanRepository.deletePlan(itemId)
             }.onSuccess {
                 runCatching {
-                    reminderCoordinator.syncPlanReminderForItem(itemId, force = true)
+                    reminderCoordinator.syncPlanReminderForItem(itemId)
                 }
                 _uiState.update {
                     it.copy(plan = null, deleted = true)

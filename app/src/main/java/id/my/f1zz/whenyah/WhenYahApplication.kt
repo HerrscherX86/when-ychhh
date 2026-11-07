@@ -36,7 +36,7 @@ class WhenYahApplication : Application() {
             }
         }
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
-            reminderCoordinator.syncAllSchedules(force = false)
+            reminderCoordinator.syncAllSchedules()
         }
     }
 }

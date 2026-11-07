@@ -1,67 +1,52 @@
 package id.my.f1zz.whenyah.data.notification
 
-import android.content.Context
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.workDataOf
-import dagger.hilt.android.qualifiers.ApplicationContext
 import id.my.f1zz.whenyah.data.local.dao.SavingsPlanDao
 import id.my.f1zz.whenyah.data.local.dao.WishlistItemDao
 import id.my.f1zz.whenyah.data.repository.WishlistRepository
 import id.my.f1zz.whenyah.data.settings.SettingsRepository
 import id.my.f1zz.whenyah.domain.dashboard.DashboardCalculator
 import id.my.f1zz.whenyah.domain.dashboard.DashboardItem
+import id.my.f1zz.whenyah.domain.i18n.LanguageStore
 import id.my.f1zz.whenyah.domain.model.ItemStatus
 import id.my.f1zz.whenyah.domain.notifications.NotificationScheduleCalculator
 import id.my.f1zz.whenyah.domain.settings.SummaryCadence
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withContext
-import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.UUID
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class ReminderCoordinator @Inject constructor(
-    @param:ApplicationContext private val context: Context,
     private val settingsRepository: SettingsRepository,
     private val savingsPlanDao: SavingsPlanDao,
     private val itemDao: WishlistItemDao,
     private val wishlistRepository: WishlistRepository,
     private val notificationService: NotificationService,
+    private val alarmScheduler: ReminderAlarmScheduler,
+    private val languageStore: LanguageStore,
 ) {
-    private val workManager: WorkManager
-        get() = WorkManager.getInstance(context)
-
-    suspend fun syncAllSchedules(force: Boolean) {
+    suspend fun syncAllSchedules() {
         val settings = settingsRepository.currentSettings()
         if (!settings.notificationsEnabled) {
             cancelAllSchedules()
             return
         }
 
-        if (force) {
-            workManager.cancelAllWorkByTag(ReminderWorkKeys.TAG_PLAN_REMINDER)
-        }
-
         savingsPlanDao.getAllPlans()
             .map { it.itemId }
             .distinct()
             .forEach { itemId ->
-                syncPlanReminderForItem(itemId, force = false)
+                syncPlanReminderForItem(itemId)
             }
 
-        syncSummarySchedule(force = force)
+        syncSummarySchedule()
     }
 
-    suspend fun syncPlanReminderForItem(itemId: UUID, force: Boolean) {
+    suspend fun syncPlanReminderForItem(itemId: UUID) {
         val settings = settingsRepository.currentSettings()
         val plan = savingsPlanDao.getByItem(itemId)
         val item = itemDao.findById(itemId)
@@ -72,43 +57,31 @@ class ReminderCoordinator @Inject constructor(
             plan.reminderLocalTime != null &&
             item != null &&
             item.status == ItemStatus.ACTIVE
-        val itemTag = ReminderWorkKeys.planItemTag(itemId)
 
         if (!eligible) {
-            workManager.cancelAllWorkByTag(itemTag)
+            alarmScheduler.cancelPlanAlarm(itemId)
             return
         }
 
-        if (!force && hasPendingWork(itemTag)) {
-            return
-        }
-
-        workManager.cancelAllWorkByTag(itemTag)
-        enqueuePlanReminder(
+        schedulePlanReminder(
             plan = checkNotNull(plan),
             itemId = itemId,
-            itemName = checkNotNull(item).name,
             anchorDate = LocalDate.now(),
         )
     }
 
     suspend fun cancelPlanReminderForItem(itemId: UUID) {
-        workManager.cancelAllWorkByTag(ReminderWorkKeys.planItemTag(itemId))
+        alarmScheduler.cancelPlanAlarm(itemId)
     }
 
-    suspend fun syncSummarySchedule(force: Boolean) {
+    suspend fun syncSummarySchedule() {
         val settings = settingsRepository.currentSettings()
         if (!settings.notificationsEnabled || settings.summaryCadence == SummaryCadence.OFF) {
-            workManager.cancelAllWorkByTag(ReminderWorkKeys.TAG_SUMMARY)
+            alarmScheduler.cancelSummaryAlarm()
             return
         }
 
-        if (!force && hasPendingWork(ReminderWorkKeys.TAG_SUMMARY)) {
-            return
-        }
-
-        workManager.cancelAllWorkByTag(ReminderWorkKeys.TAG_SUMMARY)
-        enqueueSummaryReminder(
+        scheduleSummaryReminder(
             cadence = settings.summaryCadence,
             time = settings.summaryTime,
             anchorDate = LocalDate.now(),
@@ -116,13 +89,19 @@ class ReminderCoordinator @Inject constructor(
     }
 
     suspend fun cancelAllSchedules() {
-        workManager.cancelAllWorkByTag(ReminderWorkKeys.TAG_PLAN_REMINDER)
-        workManager.cancelAllWorkByTag(ReminderWorkKeys.TAG_SUMMARY)
+        savingsPlanDao.getAllPlans()
+            .map { it.itemId }
+            .distinct()
+            .forEach { itemId ->
+                alarmScheduler.cancelPlanAlarm(itemId)
+            }
+        alarmScheduler.cancelSummaryAlarm()
     }
 
     suspend fun handlePlanReminder(planId: UUID, scheduledAtEpochMillis: Long) {
         val settings = settingsRepository.currentSettings()
         if (!settings.notificationsEnabled) return
+        languageStore.update(settings.language)
 
         val plan = savingsPlanDao.getById(planId) ?: return
         val item = itemDao.findById(plan.itemId) ?: return
@@ -137,10 +116,9 @@ class ReminderCoordinator @Inject constructor(
             )
         }
 
-        enqueuePlanReminder(
+        schedulePlanReminder(
             plan = plan,
             itemId = item.id,
-            itemName = item.name,
             anchorDate = scheduledDate(scheduledAtEpochMillis),
         )
     }
@@ -148,6 +126,7 @@ class ReminderCoordinator @Inject constructor(
     suspend fun handleSummary(scheduledAtEpochMillis: Long) {
         val settings = settingsRepository.currentSettings()
         if (!settings.notificationsEnabled || settings.summaryCadence == SummaryCadence.OFF) return
+        languageStore.update(settings.language)
 
         val activeItems = wishlistRepository.observeActiveItemsWithSavings().first()
         val summary = DashboardCalculator.summarize(
@@ -167,84 +146,48 @@ class ReminderCoordinator @Inject constructor(
             )
         }
 
-        enqueueSummaryReminder(
+        scheduleSummaryReminder(
             cadence = settings.summaryCadence,
             time = settings.summaryTime,
             anchorDate = scheduledDate(scheduledAtEpochMillis),
         )
     }
 
-    private fun enqueuePlanReminder(
+    private fun schedulePlanReminder(
         plan: id.my.f1zz.whenyah.data.local.entity.SavingsPlanEntity,
         itemId: UUID,
-        itemName: String,
         anchorDate: LocalDate,
     ) {
         val reminderTime = plan.reminderLocalTime ?: return
-        val now = ZonedDateTime.now()
         val next = NotificationScheduleCalculator.nextOccurrence(
-            now = now,
+            now = ZonedDateTime.now(),
             frequency = plan.frequency,
             time = reminderTime,
             anchorDate = anchorDate,
         )
-        val delayMillis = Duration.between(now, next).toMillis().coerceAtLeast(0)
-        val scheduledAt = next.toInstant().toEpochMilli()
-
-        val request = OneTimeWorkRequestBuilder<PlanReminderWorker>()
-            .setInitialDelay(delayMillis, TimeUnit.MILLISECONDS)
-            .setInputData(
-                workDataOf(
-                    ReminderWorkKeys.PLAN_ID to plan.id.toString(),
-                    ReminderWorkKeys.SCHEDULED_AT to scheduledAt,
-                )
-            )
-            .addTag(ReminderWorkKeys.TAG_PLAN_REMINDER)
-            .addTag(ReminderWorkKeys.planItemTag(itemId))
-            .addTag(ReminderWorkKeys.planTag(plan.id))
-            .build()
-
-        workManager.enqueueUniqueWork(
-            "plan-reminder-${plan.id}-$scheduledAt",
-            ExistingWorkPolicy.KEEP,
-            request,
+        alarmScheduler.schedulePlanAlarm(
+            itemId = itemId,
+            planId = plan.id,
+            triggerAtMillis = next.toInstant().toEpochMilli(),
         )
     }
 
-    private fun enqueueSummaryReminder(
+    private fun scheduleSummaryReminder(
         cadence: SummaryCadence,
         time: java.time.LocalTime,
         anchorDate: LocalDate,
     ) {
-        val now = ZonedDateTime.now()
         val next = NotificationScheduleCalculator.nextSummary(
-            now = now,
+            now = ZonedDateTime.now(),
             cadence = cadence,
             time = time,
             anchorDate = anchorDate,
-        ) ?: return
-        val delayMillis = Duration.between(now, next).toMillis().coerceAtLeast(0)
-        val scheduledAt = next.toInstant().toEpochMilli()
+        ) ?: run {
+            alarmScheduler.cancelSummaryAlarm()
+            return
+        }
 
-        val request = OneTimeWorkRequestBuilder<SummaryWorker>()
-            .setInitialDelay(delayMillis, TimeUnit.MILLISECONDS)
-            .setInputData(
-                workDataOf(
-                    ReminderWorkKeys.SCHEDULED_AT to scheduledAt,
-                )
-            )
-            .addTag(ReminderWorkKeys.TAG_SUMMARY)
-            .build()
-
-        workManager.enqueueUniqueWork(
-            "summary-$scheduledAt",
-            ExistingWorkPolicy.KEEP,
-            request,
-        )
-    }
-
-    private suspend fun hasPendingWork(tag: String): Boolean = withContext(Dispatchers.IO) {
-        workManager.getWorkInfosByTag(tag).get().any { !it.state.isFinished }
+        alarmScheduler.scheduleSummaryAlarm(next.toInstant().toEpochMilli())
     }
 
     private fun scheduledDate(epochMillis: Long): LocalDate =

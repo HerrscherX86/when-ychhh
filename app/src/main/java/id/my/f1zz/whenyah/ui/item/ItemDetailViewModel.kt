@@ -207,7 +207,7 @@ class ItemDetailViewModel @Inject constructor(
             val result = purchaseRepository.purchaseItem(itemId)
             if (result.isSuccess) {
                 runCatching {
-                    reminderCoordinator.syncPlanReminderForItem(itemId, force = true)
+                    reminderCoordinator.syncPlanReminderForItem(itemId)
                 }
                 _purchaseState.update {
                     it.copy(isPurchasing = false, purchased = true)
@@ -231,7 +231,7 @@ class ItemDetailViewModel @Inject constructor(
         viewModelScope.launch {
             repository.deleteItem(itemId)
             runCatching {
-                reminderCoordinator.syncPlanReminderForItem(itemId, force = true)
+                reminderCoordinator.syncPlanReminderForItem(itemId)
             }
             _deleted.value = true
         }

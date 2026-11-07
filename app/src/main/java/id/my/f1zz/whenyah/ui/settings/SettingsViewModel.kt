@@ -1,8 +1,15 @@
 package id.my.f1zz.whenyah.ui.settings
 
+import android.app.AlarmManager
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import id.my.f1zz.whenyah.data.notification.NotificationService
 import id.my.f1zz.whenyah.data.notification.ReminderCoordinator
 import id.my.f1zz.whenyah.data.settings.SettingsRepository
@@ -12,8 +19,10 @@ import id.my.f1zz.whenyah.domain.settings.AccentColor
 import id.my.f1zz.whenyah.domain.settings.AppSettings
 import id.my.f1zz.whenyah.domain.settings.SummaryCadence
 import id.my.f1zz.whenyah.domain.settings.ThemeMode
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalTime
@@ -21,6 +30,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
+    @param:ApplicationContext private val context: Context,
     private val settingsRepository: SettingsRepository,
     private val reminderCoordinator: ReminderCoordinator,
     private val notificationService: NotificationService,
@@ -31,6 +41,26 @@ class SettingsViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = AppSettings(),
     )
+
+    private val exactAlarmsAllowedState = MutableStateFlow(canScheduleExactAlarms())
+    val exactAlarmsAllowed: StateFlow<Boolean> = exactAlarmsAllowedState.asStateFlow()
+
+    fun refreshExactAlarmPermission() {
+        val allowed = canScheduleExactAlarms()
+        val changed = allowed != exactAlarmsAllowedState.value
+        exactAlarmsAllowedState.value = allowed
+        if (allowed && changed) {
+            viewModelScope.launch { reminderCoordinator.syncAllSchedules() }
+        }
+    }
+
+    fun openExactAlarmSettings() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+        val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+            .setData(Uri.parse("package:${context.packageName}"))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        runCatching { context.startActivity(intent) }
+    }
 
     fun setLanguage(value: AppLanguage) {
         viewModelScope.launch {
@@ -56,7 +86,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.setNotificationsEnabled(value)
             if (value) {
-                reminderCoordinator.syncAllSchedules(force = true)
+                reminderCoordinator.syncAllSchedules()
             } else {
                 reminderCoordinator.cancelAllSchedules()
             }
@@ -70,14 +100,20 @@ class SettingsViewModel @Inject constructor(
     fun setSummaryCadence(value: SummaryCadence) {
         viewModelScope.launch {
             settingsRepository.setSummaryCadence(value)
-            reminderCoordinator.syncSummarySchedule(force = true)
+            reminderCoordinator.syncSummarySchedule()
         }
     }
 
     fun setSummaryTime(value: LocalTime) {
         viewModelScope.launch {
             settingsRepository.setSummaryTime(value)
-            reminderCoordinator.syncSummarySchedule(force = true)
+            reminderCoordinator.syncSummarySchedule()
         }
+    }
+
+    private fun canScheduleExactAlarms(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return true
+        return context.getSystemService(AlarmManager::class.java)
+            ?.canScheduleExactAlarms() == true
     }
 }

@@ -59,6 +59,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import id.my.f1zz.whenyah.domain.i18n.AppLanguage
 import id.my.f1zz.whenyah.domain.settings.AccentColor
@@ -79,8 +81,13 @@ fun SettingsScreen(
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val backupState by backupViewModel.uiState.collectAsStateWithLifecycle()
+    val exactAlarmsAllowed by viewModel.exactAlarmsAllowed.collectAsStateWithLifecycle()
     val strings = LocalAppStrings.current
     val context = LocalContext.current
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshExactAlarmPermission()
+    }
     var permissionDenied by rememberSaveable { mutableStateOf(false) }
     var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -237,6 +244,29 @@ fun SettingsScreen(
                     checked = settings.notificationsEnabled,
                     onCheckedChange = ::onNotificationsToggle,
                 )
+
+                if (settings.notificationsEnabled && !exactAlarmsAllowed) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            text = strings.exactRemindersTitle,
+                            style = MaterialTheme.typography.labelLarge,
+                        )
+                        Text(
+                            text = strings.exactRemindersHelp,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        OutlinedButton(
+                            onClick = viewModel::openExactAlarmSettings,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 48.dp),
+                            shape = RoundedCornerShape(18.dp),
+                        ) {
+                            Text(strings.allowExactReminders)
+                        }
+                    }
+                }
 
                 SettingSwitchRow(
                     title = strings.goalNotifications,
