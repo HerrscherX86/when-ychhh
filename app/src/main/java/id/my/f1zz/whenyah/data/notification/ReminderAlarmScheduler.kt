@@ -4,8 +4,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
-import android.os.Build
+import androidx.core.net.toUri
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.UUID
 import javax.inject.Inject
@@ -18,8 +17,7 @@ class ReminderAlarmScheduler @Inject constructor(
     private val alarmManager: AlarmManager
         get() = checkNotNull(context.getSystemService(AlarmManager::class.java))
 
-    fun canScheduleExactAlarms(): Boolean =
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
+    fun canScheduleExactAlarms(): Boolean = alarmManager.canScheduleExactAlarms()
 
     fun schedulePlanAlarm(itemId: UUID, planId: UUID, triggerAtMillis: Long) {
         val pendingIntent = PendingIntent.getBroadcast(
@@ -91,12 +89,12 @@ class ReminderAlarmScheduler @Inject constructor(
     private fun planIntent(itemId: UUID): Intent =
         Intent(context, ReminderAlarmReceiver::class.java).apply {
             action = ReminderAlarmContract.ACTION_PLAN_REMINDER
-            data = Uri.parse(ReminderAlarmContract.planData(itemId))
+            data = ReminderAlarmContract.planData(itemId).toUri()
         }
 
     private fun summaryIntent(): Intent =
         Intent(context, ReminderAlarmReceiver::class.java).apply {
             action = ReminderAlarmContract.ACTION_SUMMARY
-            data = Uri.parse(ReminderAlarmContract.summaryData())
+            data = ReminderAlarmContract.summaryData().toUri()
         }
 }

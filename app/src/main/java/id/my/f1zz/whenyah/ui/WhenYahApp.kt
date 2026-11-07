@@ -63,10 +63,17 @@ fun WhenYahApp() {
     var topBarBackHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
 
     val tabEnter = fadeIn(
-        animationSpec = tween(AppMotion.FastMillis, easing = AppMotion.StandardEasing)
+        animationSpec = tween(
+            durationMillis = AppMotion.TabFadeInMillis,
+            delayMillis = AppMotion.TabFadeOutMillis,
+            easing = AppMotion.FadeInEasing,
+        )
     )
     val tabExit = fadeOut(
-        animationSpec = tween(AppMotion.FastMillis, easing = AppMotion.StandardEasing)
+        animationSpec = tween(
+            durationMillis = AppMotion.TabFadeOutMillis,
+            easing = AppMotion.FadeOutEasing,
+        )
     )
     val detailFadeIn = fadeIn(
         animationSpec = tween(

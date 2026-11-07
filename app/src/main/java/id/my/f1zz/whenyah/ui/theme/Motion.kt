@@ -10,9 +10,13 @@ object AppMotion {
     const val MediumMillis = 250
     const val SlowMillis = 400
 
-    /** Fade-through timing: old content leaves quickly, new content follows. */
-    const val FadeOutMillis = 90
-    const val FadeInMillis = 210
+    /** Fade-through timing: old content leaves first, then new content follows. */
+    const val FadeOutMillis = 180
+    const val FadeInMillis = 420
+
+    /** Top-level tab fade-through, slightly slower than detail navigation. */
+    const val TabFadeOutMillis = 150
+    const val TabFadeInMillis = 350
 
     val StandardEasing = FastOutSlowInEasing
     val EmphasizedEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)

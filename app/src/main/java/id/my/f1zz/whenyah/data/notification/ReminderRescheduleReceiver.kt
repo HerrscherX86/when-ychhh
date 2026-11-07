@@ -4,7 +4,6 @@ import android.app.AlarmManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.util.Log
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.CoroutineScope
@@ -38,8 +37,7 @@ class ReminderRescheduleReceiver : BroadcastReceiver() {
         ) {
             return true
         }
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-            action == AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED
+        return action == AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED
     }
 
     private companion object {
