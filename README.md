@@ -182,16 +182,11 @@ Hasil build ada di:
 ```
 app/build/outputs/apk/release/
 ```
-
-Kalau belum ada signing config, file yang dihasilkan bernama `app-release-unsigned.apk`. Tandatangani dulu dengan keystore rilis — misalnya lewat **Build → Generate Signed Bundle / APK** di Android Studio — sebelum dipasang atau dibagikan.
-
 ---
 
 ## 📥 Download APK
 
 APK rilis bisa diunduh dari halaman [Releases](https://github.com/HerrscherX86/when-ychhh/releases).
-
-Kalau belum ada rilis yang tersedia, build sendiri dari source seperti di atas.
 
 ---
 
