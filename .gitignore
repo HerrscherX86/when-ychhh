@@ -24,6 +24,9 @@ keystore.properties
 *.ap_
 *.dex
 
+# Local release output
+app/release/
+
 # Logs and crash dumps
 *.log
 *.hprof

@@ -187,11 +187,14 @@ Hasil build ada di:
 ```
 app/build/outputs/apk/release/
 ```
+
 ---
 
 ## 📥 Download APK
 
 APK rilis bisa diunduh dari halaman [Releases](https://github.com/HerrscherX86/when-ychhh/releases).
+
+Untuk maintainer: proses signing dan publikasi dijelaskan di [docs/RELEASING.md](docs/RELEASING.md).
 
 ---
 
