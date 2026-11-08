@@ -234,8 +234,18 @@ interface AppStrings {
     val restoring: String
     val restoreReplacesData: String
     val about: String
-    val appVersion: String
+    fun appVersion(versionName: String): String
     val appTagline: String
+    val updateAvailableTitle: String
+    fun updateAvailableMessage(versionName: String): String
+    val updateNow: String
+    val later: String
+    val checkForUpdates: String
+    val checkForUpdatesAutomatically: String
+    val checkForUpdatesHelp: String
+    val updateCheckInProgress: String
+    val upToDate: String
+    val updateCheckFailed: String
     val language: String
     val languageHelp: String
     val languageEnglish: String

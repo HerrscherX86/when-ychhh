@@ -62,6 +62,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import id.my.f1zz.whenyah.data.update.ManualUpdateState
 import id.my.f1zz.whenyah.domain.i18n.AppLanguage
 import id.my.f1zz.whenyah.domain.settings.AccentColor
 import id.my.f1zz.whenyah.domain.settings.SummaryCadence
@@ -82,8 +83,15 @@ fun SettingsScreen(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val backupState by backupViewModel.uiState.collectAsStateWithLifecycle()
     val exactAlarmsAllowed by viewModel.exactAlarmsAllowed.collectAsStateWithLifecycle()
+    val updateChecksEnabled by viewModel.updateChecksEnabled.collectAsStateWithLifecycle()
+    val manualUpdateState by viewModel.manualUpdateState.collectAsStateWithLifecycle()
     val strings = LocalAppStrings.current
     val context = LocalContext.current
+    val versionName = remember(context) {
+        runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        }.getOrNull().orEmpty().ifBlank { "?" }
+    }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refreshExactAlarmPermission()
@@ -417,7 +425,7 @@ fun SettingsScreen(
         item {
             SettingsSection(icon = Icons.Outlined.Info, title = strings.about) {
                 Text(
-                    text = strings.appVersion,
+                    text = strings.appVersion(versionName),
                     style = MaterialTheme.typography.bodyLarge,
                 )
                 Text(
@@ -425,6 +433,50 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+
+                SettingSwitchRow(
+                    title = strings.checkForUpdatesAutomatically,
+                    supportingText = strings.checkForUpdatesHelp,
+                    checked = updateChecksEnabled,
+                    onCheckedChange = viewModel::setUpdateChecksEnabled,
+                )
+
+                OutlinedButton(
+                    onClick = viewModel::checkForUpdates,
+                    enabled = manualUpdateState != ManualUpdateState.Checking,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp),
+                    shape = RoundedCornerShape(18.dp),
+                ) {
+                    Text(
+                        if (manualUpdateState == ManualUpdateState.Checking) {
+                            strings.updateCheckInProgress
+                        } else {
+                            strings.checkForUpdates
+                        }
+                    )
+                }
+
+                when (manualUpdateState) {
+                    ManualUpdateState.UpToDate -> {
+                        Text(
+                            text = strings.upToDate,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+
+                    ManualUpdateState.Failed -> {
+                        Text(
+                            text = strings.updateCheckFailed,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+
+                    else -> Unit
+                }
             }
         }
     }

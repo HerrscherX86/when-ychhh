@@ -6,7 +6,7 @@
 
 <p align="center"><strong>Wishlist dan tracker tabungan offline.</strong></p>
 
-<p align="center"><strong>When Yah</strong> membantu kamu mencatat barang yang ingin dibeli, menyisihkan uang untuk tiap barang, membuat rencana nabung, dan melihat progresnya. Semuanya tanpa akun, tanpa internet, dan tanpa menghubungkan rekening bank.</p>
+<p align="center"><strong>When Yah</strong> membantu kamu mencatat barang yang ingin dibeli, menyisihkan uang untuk tiap barang, membuat rencana nabung, dan melihat progresnya. Semuanya tanpa akun, tanpa backend, dan tanpa menghubungkan rekening bank — dan tetap jalan offline. Internet cuma dipakai untuk mengecek update.</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/platform-Android-3DDC84?logo=android&amp;logoColor=white" alt="Platform Android" />
@@ -111,6 +111,11 @@
 - Bahasa Indonesia (register Gaul) dan English, bisa diganti kapan saja.
 - Onboarding tiga halaman saat pertama kali membuka aplikasi.
 
+### Update
+- Cek versi baru dari GitHub Releases otomatis sekali sehari; bisa dimatikan di Settings.
+- Dialog update membuka halaman rilis GitHub; APK diunduh dan dipasang manual.
+- Pengecekan update gagal dengan tenang saat offline dan tidak mengganggu fitur lain.
+
 ### Yang sengaja tidak ada
 - Integrasi bank, pembayaran, atau verifikasi transaksi.
 - Akun, sinkronisasi lintas perangkat, atau backend.
@@ -193,7 +198,7 @@ APK rilis bisa diunduh dari halaman [Releases](https://github.com/HerrscherX86/w
 ## 🔐 Privasi
 
 - Tidak ada akun, login, backend, analytics, atau iklan.
-- Aplikasi **tidak meminta izin internet**.
+- Aplikasi memakai internet **hanya untuk mengecek update** dari GitHub Releases. Tidak ada data pribadi yang dikirim.
 - Semua data tersimpan di penyimpanan privat aplikasi.
 - Backup hanya keluar kalau kamu memilih lokasinya sendiri lewat file picker Android.
 - File backup tidak dienkripsi, jadi simpan di lokasi yang aman.
@@ -203,7 +208,7 @@ APK rilis bisa diunduh dari halaman [Releases](https://github.com/HerrscherX86/w
 
 ## 📌 Status
 
-Versi **1.0** — initial release untuk pemakaian pribadi. Belum tersedia di Google Play.
+Versi **1.1** — perbaikan jadwal reminder mingguan/bulanan, pengecekan update dari GitHub, dan migrasi database ke v2. Belum tersedia di Google Play.
 
 ---
 

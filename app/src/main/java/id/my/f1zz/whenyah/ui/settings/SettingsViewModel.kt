@@ -12,6 +12,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import id.my.f1zz.whenyah.data.notification.NotificationService
 import id.my.f1zz.whenyah.data.notification.ReminderCoordinator
 import id.my.f1zz.whenyah.data.settings.SettingsRepository
+import id.my.f1zz.whenyah.data.update.ManualUpdateState
+import id.my.f1zz.whenyah.data.update.UpdateManager
+import id.my.f1zz.whenyah.data.update.UpdatePreferences
 import id.my.f1zz.whenyah.domain.i18n.AppLanguage
 import id.my.f1zz.whenyah.domain.i18n.LanguageStore
 import id.my.f1zz.whenyah.domain.settings.AccentColor
@@ -34,6 +37,8 @@ class SettingsViewModel @Inject constructor(
     private val reminderCoordinator: ReminderCoordinator,
     private val notificationService: NotificationService,
     private val languageStore: LanguageStore,
+    private val updatePreferences: UpdatePreferences,
+    private val updateManager: UpdateManager,
 ) : ViewModel() {
     val settings: StateFlow<AppSettings> = settingsRepository.settings.stateIn(
         scope = viewModelScope,
@@ -43,6 +48,14 @@ class SettingsViewModel @Inject constructor(
 
     private val exactAlarmsAllowedState = MutableStateFlow(canScheduleExactAlarms())
     val exactAlarmsAllowed: StateFlow<Boolean> = exactAlarmsAllowedState.asStateFlow()
+
+    val updateChecksEnabled: StateFlow<Boolean> = updatePreferences.updateChecksEnabled.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = true,
+    )
+
+    val manualUpdateState: StateFlow<ManualUpdateState> = updateManager.manualState
 
     fun refreshExactAlarmPermission() {
         val allowed = canScheduleExactAlarms()
@@ -107,6 +120,14 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.setSummaryTime(value)
             reminderCoordinator.syncSummarySchedule()
         }
+    }
+
+    fun setUpdateChecksEnabled(value: Boolean) {
+        viewModelScope.launch { updatePreferences.setUpdateChecksEnabled(value) }
+    }
+
+    fun checkForUpdates() {
+        viewModelScope.launch { updateManager.checkManually() }
     }
 
     private fun canScheduleExactAlarms(): Boolean =
