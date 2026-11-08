@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.io.IOException
+import java.time.LocalDate
 import java.time.LocalTime
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -57,6 +58,8 @@ class SettingsRepository @Inject constructor(
                 summaryTime = preferences[Keys.SUMMARY_TIME]
                     ?.let { value -> runCatching { LocalTime.parse(value) }.getOrNull() }
                     ?: LocalTime.of(9, 0),
+                summaryAnchorDate = preferences[Keys.SUMMARY_ANCHOR_DATE]
+                    ?.let { value -> runCatching { LocalDate.parse(value) }.getOrNull() },
             )
         }
 
@@ -79,6 +82,12 @@ class SettingsRepository @Inject constructor(
             preferences[Keys.GOAL_NOTIFICATIONS_ENABLED] = settings.goalNotificationsEnabled
             preferences[Keys.SUMMARY_CADENCE] = settings.summaryCadence.name
             preferences[Keys.SUMMARY_TIME] = settings.summaryTime.toString()
+            val anchorDate = settings.summaryAnchorDate
+            if (anchorDate != null) {
+                preferences[Keys.SUMMARY_ANCHOR_DATE] = anchorDate.toString()
+            } else {
+                preferences.remove(Keys.SUMMARY_ANCHOR_DATE)
+            }
         }
     }
 
@@ -107,7 +116,21 @@ class SettingsRepository @Inject constructor(
     }
 
     suspend fun setSummaryCadence(value: SummaryCadence) {
-        context.settingsDataStore.edit { it[Keys.SUMMARY_CADENCE] = value.name }
+        context.settingsDataStore.edit { preferences ->
+            val previous = preferences[Keys.SUMMARY_CADENCE]
+            preferences[Keys.SUMMARY_CADENCE] = value.name
+
+            if (value == SummaryCadence.OFF) {
+                preferences.remove(Keys.SUMMARY_ANCHOR_DATE)
+            } else if (previous != value.name || preferences[Keys.SUMMARY_ANCHOR_DATE] == null) {
+                // Anchor weekly/monthly summaries to the day the cadence was enabled.
+                preferences[Keys.SUMMARY_ANCHOR_DATE] = LocalDate.now().toString()
+            }
+        }
+    }
+
+    suspend fun setSummaryAnchorDate(value: LocalDate) {
+        context.settingsDataStore.edit { it[Keys.SUMMARY_ANCHOR_DATE] = value.toString() }
     }
 
     suspend fun setSummaryTime(value: LocalTime) {
@@ -124,5 +147,6 @@ class SettingsRepository @Inject constructor(
         val GOAL_NOTIFICATIONS_ENABLED = booleanPreferencesKey("goal_notifications_enabled")
         val SUMMARY_CADENCE = stringPreferencesKey("summary_cadence")
         val SUMMARY_TIME = stringPreferencesKey("summary_time")
+        val SUMMARY_ANCHOR_DATE = stringPreferencesKey("summary_anchor_date")
     }
 }

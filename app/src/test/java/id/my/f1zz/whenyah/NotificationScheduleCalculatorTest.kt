@@ -108,6 +108,48 @@ class NotificationScheduleCalculatorTest {
     }
 
     @Test
+    fun weeklyReminderKeepsItsAnchorDayInsteadOfToday() {
+        val now = ZonedDateTime.of(2026, 11, 4, 8, 0, 0, 0, zone) // Wednesday
+
+        val next = NotificationScheduleCalculator.nextOccurrence(
+            now = now,
+            frequency = PlanFrequency.WEEKLY,
+            time = nineAm,
+            anchorDate = LocalDate.of(2026, 11, 2), // Monday
+        )
+
+        assertEquals(ZonedDateTime.of(2026, 11, 9, 9, 0, 0, 0, zone), next)
+    }
+
+    @Test
+    fun monthlyReminderKeepsItsAnchorDayInsteadOfToday() {
+        val now = ZonedDateTime.of(2026, 11, 4, 8, 0, 0, 0, zone)
+
+        val next = NotificationScheduleCalculator.nextOccurrence(
+            now = now,
+            frequency = PlanFrequency.MONTHLY,
+            time = nineAm,
+            anchorDate = LocalDate.of(2026, 10, 15),
+        )
+
+        assertEquals(ZonedDateTime.of(2026, 11, 15, 9, 0, 0, 0, zone), next)
+    }
+
+    @Test
+    fun summaryKeepsItsAnchorDayInsteadOfToday() {
+        val now = ZonedDateTime.of(2026, 11, 4, 8, 0, 0, 0, zone) // Wednesday
+
+        val next = NotificationScheduleCalculator.nextSummary(
+            now = now,
+            cadence = SummaryCadence.WEEKLY,
+            time = nineAm,
+            anchorDate = LocalDate.of(2026, 11, 2), // Monday
+        )
+
+        assertEquals(ZonedDateTime.of(2026, 11, 9, 9, 0, 0, 0, zone), next)
+    }
+
+    @Test
     fun summaryCadenceUsesWeeklyOrMonthlyCalendarRecurrence() {
         val now = ZonedDateTime.of(2026, 11, 6, 10, 0, 0, 0, zone)
 

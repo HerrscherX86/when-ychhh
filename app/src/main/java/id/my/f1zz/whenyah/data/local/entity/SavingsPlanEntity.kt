@@ -6,6 +6,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import id.my.f1zz.whenyah.domain.model.PlanFrequency
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
 
@@ -31,4 +32,5 @@ data class SavingsPlanEntity(
     val active: Boolean,
     val createdAt: Instant,
     val updatedAt: Instant,
+    val reminderAnchorDate: LocalDate? = null,
 )

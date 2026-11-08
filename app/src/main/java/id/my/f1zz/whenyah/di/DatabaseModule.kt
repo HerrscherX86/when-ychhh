@@ -7,6 +7,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import id.my.f1zz.whenyah.data.local.MIGRATION_1_2
 import id.my.f1zz.whenyah.data.local.WhenYahDatabase
 import id.my.f1zz.whenyah.data.local.dao.CollectionDao
 import id.my.f1zz.whenyah.data.local.dao.PurchaseRecordDao
@@ -22,6 +23,7 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): WhenYahDatabase =
         Room.databaseBuilder(context, WhenYahDatabase::class.java, WhenYahDatabase.NAME)
+            .addMigrations(MIGRATION_1_2)
             .build()
 
     @Provides

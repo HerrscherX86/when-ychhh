@@ -14,6 +14,7 @@ import id.my.f1zz.whenyah.domain.settings.AppSettings
 import id.my.f1zz.whenyah.domain.settings.SummaryCadence
 import id.my.f1zz.whenyah.domain.settings.ThemeMode
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
 
@@ -128,6 +129,10 @@ object BackupValidator {
             if (plan.reminderEnabled && reminderTime == null) {
                 fail("enabled plan reminder requires a time")
             }
+            val reminderAnchorDate = plan.reminderAnchorDate?.let { raw ->
+                runCatching { LocalDate.parse(raw) }
+                    .getOrElse { fail("invalid plan reminder anchor date") }
+            }
 
             SavingsPlanEntity(
                 id = parseUuid(plan.id, "plan id"),
@@ -139,6 +144,7 @@ object BackupValidator {
                 active = plan.active,
                 createdAt = instant(plan.createdAtEpochMillis, "plan createdAt"),
                 updatedAt = instant(plan.updatedAtEpochMillis, "plan updatedAt"),
+                reminderAnchorDate = reminderAnchorDate,
             )
         }
         requireUnique(plans.map { it.id }, "plan id")
@@ -157,6 +163,10 @@ object BackupValidator {
             ),
             summaryTime = runCatching { LocalTime.parse(data.settings.summaryTime) }
                 .getOrElse { fail("invalid summary time") },
+            summaryAnchorDate = data.settings.summaryAnchorDate?.let { value ->
+                runCatching { LocalDate.parse(value) }
+                    .getOrElse { fail("invalid summary anchor date") }
+            },
         )
 
         val referencedImages = items.mapNotNullTo(mutableSetOf()) { it.imageRelativePath }

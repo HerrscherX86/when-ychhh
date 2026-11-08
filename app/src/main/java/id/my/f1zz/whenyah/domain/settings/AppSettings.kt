@@ -1,6 +1,7 @@
 package id.my.f1zz.whenyah.domain.settings
 
 import id.my.f1zz.whenyah.domain.i18n.AppLanguage
+import java.time.LocalDate
 import java.time.LocalTime
 
 enum class ThemeMode {
@@ -32,4 +33,5 @@ data class AppSettings(
     val goalNotificationsEnabled: Boolean = true,
     val summaryCadence: SummaryCadence = SummaryCadence.OFF,
     val summaryTime: LocalTime = LocalTime.of(9, 0),
+    val summaryAnchorDate: LocalDate? = null,
 )

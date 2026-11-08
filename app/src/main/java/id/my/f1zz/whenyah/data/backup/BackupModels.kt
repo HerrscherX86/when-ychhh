@@ -91,6 +91,7 @@ data class BackupSavingsPlan(
     val active: Boolean,
     val createdAtEpochMillis: Long,
     val updatedAtEpochMillis: Long,
+    val reminderAnchorDate: String? = null,
 )
 
 @Serializable
@@ -111,4 +112,5 @@ data class BackupSettings(
     val goalNotificationsEnabled: Boolean,
     val summaryCadence: String,
     val summaryTime: String,
+    val summaryAnchorDate: String? = null,
 )

@@ -19,9 +19,11 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
 
@@ -44,8 +46,22 @@ class BackupValidatorTest {
         assertEquals(AccentColor.BLUE, validated.settings.accentColor)
         assertEquals(SummaryCadence.WEEKLY, validated.settings.summaryCadence)
         assertEquals(LocalTime.of(8, 30), validated.settings.summaryTime)
+        assertEquals(LocalDate.of(2026, 11, 2), validated.settings.summaryAnchorDate)
         assertEquals(PlanFrequency.WEEKLY, validated.plans.single().frequency)
+        assertEquals(LocalDate.of(2026, 11, 2), validated.plans.single().reminderAnchorDate)
         assertEquals(SavingsEventType.DEPOSIT, validated.events.single().type)
+    }
+
+    @Test
+    fun olderBackupsWithoutPlanAnchorStillValidate() {
+        val data = validData()
+        val planWithoutAnchor = data.savingsPlans.single().copy(reminderAnchorDate = null)
+
+        val validated = BackupValidator.validate(
+            data.copy(savingsPlans = listOf(planWithoutAnchor))
+        )
+
+        assertNull(validated.plans.single().reminderAnchorDate)
     }
 
     @Test
@@ -272,6 +288,7 @@ class BackupValidatorTest {
                 active = true,
                 createdAtEpochMillis = 1_700_000_000_000,
                 updatedAtEpochMillis = 1_700_000_100_000,
+                reminderAnchorDate = "2026-11-02",
             )
         ),
         purchaseRecords = emptyList(),
@@ -284,6 +301,7 @@ class BackupValidatorTest {
             goalNotificationsEnabled = true,
             summaryCadence = "WEEKLY",
             summaryTime = "08:30",
+            summaryAnchorDate = "2026-11-02",
         ),
     )
 }

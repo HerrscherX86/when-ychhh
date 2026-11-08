@@ -2,6 +2,7 @@ package id.my.f1zz.whenyah.data.notification
 
 import id.my.f1zz.whenyah.data.local.dao.SavingsPlanDao
 import id.my.f1zz.whenyah.data.local.dao.WishlistItemDao
+import id.my.f1zz.whenyah.data.local.entity.SavingsPlanEntity
 import id.my.f1zz.whenyah.data.repository.WishlistRepository
 import id.my.f1zz.whenyah.data.settings.SettingsRepository
 import id.my.f1zz.whenyah.domain.dashboard.DashboardCalculator
@@ -63,10 +64,16 @@ class ReminderCoordinator @Inject constructor(
             return
         }
 
+        val loadedPlan = checkNotNull(plan)
+        val anchorDate = loadedPlan.reminderAnchorDate
+            ?: loadedPlan.updatedAt.atZone(ZoneId.systemDefault()).toLocalDate()
+        if (loadedPlan.reminderAnchorDate == null) {
+            savingsPlanDao.upsert(loadedPlan.copy(reminderAnchorDate = anchorDate))
+        }
         schedulePlanReminder(
-            plan = checkNotNull(plan),
+            plan = loadedPlan,
             itemId = itemId,
-            anchorDate = LocalDate.now(),
+            anchorDate = anchorDate,
         )
     }
 
@@ -81,10 +88,15 @@ class ReminderCoordinator @Inject constructor(
             return
         }
 
+        val anchorDate = settings.summaryAnchorDate ?: run {
+            val today = LocalDate.now()
+            settingsRepository.setSummaryAnchorDate(today)
+            today
+        }
         scheduleSummaryReminder(
             cadence = settings.summaryCadence,
             time = settings.summaryTime,
-            anchorDate = LocalDate.now(),
+            anchorDate = anchorDate,
         )
     }
 
@@ -116,10 +128,19 @@ class ReminderCoordinator @Inject constructor(
             )
         }
 
+        // Keep the day the reminder was enabled as the anchor so weekly/monthly
+        // schedules survive app restarts and monthly reminders stay clamped
+        // (e.g. Jan 31 -> Feb 28 -> Mar 31).
+        val anchorDate = plan.reminderAnchorDate
+            ?: plan.updatedAt.atZone(ZoneId.systemDefault()).toLocalDate()
+        if (plan.reminderAnchorDate == null) {
+            savingsPlanDao.upsert(plan.copy(reminderAnchorDate = anchorDate))
+        }
         schedulePlanReminder(
             plan = plan,
             itemId = item.id,
-            anchorDate = scheduledDate(scheduledAtEpochMillis),
+            anchorDate = anchorDate,
+            now = schedulingNow(scheduledAtEpochMillis),
         )
     }
 
@@ -146,21 +167,28 @@ class ReminderCoordinator @Inject constructor(
             )
         }
 
+        val anchorDate = settings.summaryAnchorDate ?: run {
+            val firedDate = scheduledDate(scheduledAtEpochMillis)
+            settingsRepository.setSummaryAnchorDate(firedDate)
+            firedDate
+        }
         scheduleSummaryReminder(
             cadence = settings.summaryCadence,
             time = settings.summaryTime,
-            anchorDate = scheduledDate(scheduledAtEpochMillis),
+            anchorDate = anchorDate,
+            now = schedulingNow(scheduledAtEpochMillis),
         )
     }
 
     private fun schedulePlanReminder(
-        plan: id.my.f1zz.whenyah.data.local.entity.SavingsPlanEntity,
+        plan: SavingsPlanEntity,
         itemId: UUID,
         anchorDate: LocalDate,
+        now: ZonedDateTime = ZonedDateTime.now(),
     ) {
         val reminderTime = plan.reminderLocalTime ?: return
         val next = NotificationScheduleCalculator.nextOccurrence(
-            now = ZonedDateTime.now(),
+            now = now,
             frequency = plan.frequency,
             time = reminderTime,
             anchorDate = anchorDate,
@@ -176,9 +204,10 @@ class ReminderCoordinator @Inject constructor(
         cadence: SummaryCadence,
         time: java.time.LocalTime,
         anchorDate: LocalDate,
+        now: ZonedDateTime = ZonedDateTime.now(),
     ) {
         val next = NotificationScheduleCalculator.nextSummary(
-            now = ZonedDateTime.now(),
+            now = now,
             cadence = cadence,
             time = time,
             anchorDate = anchorDate,
@@ -194,4 +223,14 @@ class ReminderCoordinator @Inject constructor(
         Instant.ofEpochMilli(epochMillis)
             .atZone(ZoneId.systemDefault())
             .toLocalDate()
+
+    /**
+     * If an inexact alarm fires before its requested time, advance the reference
+     * point past that occurrence so it is not scheduled a second time.
+     */
+    private fun schedulingNow(occurrenceEpochMillis: Long): ZonedDateTime {
+        val now = ZonedDateTime.now()
+        val occurrence = Instant.ofEpochMilli(occurrenceEpochMillis).atZone(now.zone)
+        return if (occurrence.isAfter(now)) occurrence.plusSeconds(1) else now
+    }
 }

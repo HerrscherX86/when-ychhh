@@ -232,7 +232,7 @@ class BackupManager @Inject constructor(
         if (manifest.formatVersion != BACKUP_FORMAT_VERSION) {
             throw BackupException("Unsupported backup format version")
         }
-        if (manifest.databaseSchemaVersion != WHEN_YAH_DATABASE_VERSION) {
+        if (manifest.databaseSchemaVersion > WHEN_YAH_DATABASE_VERSION) {
             throw BackupException("Backup database version is not supported")
         }
         return manifest
@@ -527,6 +527,7 @@ private fun SavingsPlanEntity.toBackup() = BackupSavingsPlan(
     active = active,
     createdAtEpochMillis = createdAt.toEpochMilli(),
     updatedAtEpochMillis = updatedAt.toEpochMilli(),
+    reminderAnchorDate = reminderAnchorDate?.toString(),
 )
 
 private fun PurchaseRecordEntity.toBackup() = BackupPurchaseRecord(
@@ -545,4 +546,5 @@ private fun id.my.f1zz.whenyah.domain.settings.AppSettings.toBackup() = BackupSe
     goalNotificationsEnabled = goalNotificationsEnabled,
     summaryCadence = summaryCadence.name,
     summaryTime = summaryTime.toString(),
+    summaryAnchorDate = summaryAnchorDate?.toString(),
 )

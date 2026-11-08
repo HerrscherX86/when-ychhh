@@ -5,7 +5,9 @@ import id.my.f1zz.whenyah.data.local.entity.SavingsPlanEntity
 import id.my.f1zz.whenyah.domain.model.PlanFrequency
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalTime
+import java.time.ZoneId
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -37,12 +39,19 @@ class SavingsPlanRepository @Inject constructor(
 
         val now = Instant.now()
         val existing = savingsPlanDao.getByItem(itemId)
+        val reminderAnchorDate = when {
+            !reminderEnabled -> null
+            existing?.reminderEnabled == true -> existing.reminderAnchorDate
+                ?: existing.updatedAt.atZone(ZoneId.systemDefault()).toLocalDate()
+            else -> LocalDate.now()
+        }
         val plan = existing?.copy(
             contributionIdr = contributionIdr,
             frequency = frequency,
             reminderEnabled = reminderEnabled,
             reminderLocalTime = reminderLocalTime,
             updatedAt = now,
+            reminderAnchorDate = reminderAnchorDate,
         ) ?: SavingsPlanEntity(
             id = UUID.randomUUID(),
             itemId = itemId,
@@ -53,6 +62,7 @@ class SavingsPlanRepository @Inject constructor(
             active = true,
             createdAt = now,
             updatedAt = now,
+            reminderAnchorDate = reminderAnchorDate,
         )
 
         savingsPlanDao.upsert(plan)
