@@ -13,6 +13,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -27,6 +28,7 @@ import id.my.f1zz.whenyah.ui.components.UpdateAvailableDialog
 import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
 import id.my.f1zz.whenyah.ui.onboarding.OnboardingScreen
 import id.my.f1zz.whenyah.ui.theme.WhenYahTheme
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -45,6 +47,7 @@ class MainActivity : ComponentActivity() {
             val pendingUpdate by updateManager.pendingUpdate.collectAsStateWithLifecycle()
             val strings = AppStringsFactory.forLanguage(settings.language)
             val context = LocalContext.current
+            val updateScope = rememberCoroutineScope()
 
             CompositionLocalProvider(LocalAppStrings provides strings) {
                 WhenYahTheme(
@@ -96,6 +99,11 @@ class MainActivity : ComponentActivity() {
                                         }
                                 },
                                 onLater = updateManager::dismissPendingUpdate,
+                                onSkip = {
+                                    updateScope.launch {
+                                        updateManager.skipPendingUpdate()
+                                    }
+                                },
                             )
                         }
                     }

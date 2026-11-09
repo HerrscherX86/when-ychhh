@@ -123,6 +123,13 @@ class ItemDetailViewModel @Inject constructor(
     private val _deleted = MutableStateFlow(false)
     val deleted: StateFlow<Boolean> = _deleted.asStateFlow()
 
+    private val _transactionCompleted = MutableStateFlow<TransactionType?>(null)
+    val transactionCompleted: StateFlow<TransactionType?> = _transactionCompleted.asStateFlow()
+
+    fun consumeTransactionCompleted() {
+        _transactionCompleted.value = null
+    }
+
     fun startTransaction(type: TransactionType) {
         _transactionForm.value = TransactionFormState(type = type)
     }
@@ -183,6 +190,7 @@ class ItemDetailViewModel @Inject constructor(
 
             result.fold(
                 onSuccess = {
+                    _transactionCompleted.value = type
                     _transactionForm.value = TransactionFormState()
                 },
                 onFailure = {

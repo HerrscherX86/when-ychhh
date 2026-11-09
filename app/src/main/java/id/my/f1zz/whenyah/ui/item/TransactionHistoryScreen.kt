@@ -23,6 +23,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -32,6 +34,7 @@ import id.my.f1zz.whenyah.ui.components.ScreenPhase
 import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
 import id.my.f1zz.whenyah.ui.theme.AppMotion
 import id.my.f1zz.whenyah.ui.util.formatIdr
+import kotlin.math.roundToInt
 
 @Composable
 fun TransactionHistoryScreen(
@@ -109,7 +112,12 @@ fun TransactionHistoryScreen(
                                     progress = { animatedProgress },
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(8.dp),
+                                        .height(8.dp)
+                                        .semantics {
+                                            contentDescription = strings.percentageFunded(
+                                                (state.savings.progress * 100).roundToInt()
+                                            )
+                                        },
                                 )
                             }
                         }

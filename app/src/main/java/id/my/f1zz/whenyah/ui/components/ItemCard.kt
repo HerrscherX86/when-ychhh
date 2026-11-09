@@ -26,6 +26,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -148,7 +150,16 @@ fun ItemCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(8.dp)
-                            .clip(CircleShape),
+                            .clip(CircleShape)
+                            .semantics {
+                                contentDescription = if (isGoalReached) {
+                                    strings.goalReached
+                                } else {
+                                    strings.percentageFunded(
+                                        (savings.progress * 100).roundToInt()
+                                    )
+                                }
+                            },
                         color = progressColor,
                         trackColor = MaterialTheme.colorScheme.surfaceVariant,
                     )

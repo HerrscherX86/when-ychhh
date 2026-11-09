@@ -3,6 +3,7 @@ package id.my.f1zz.whenyah.ui.settings
 import android.app.AlarmManager
 import android.content.Context
 import android.content.Intent
+import android.os.PowerManager
 import android.provider.Settings
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
@@ -49,6 +50,9 @@ class SettingsViewModel @Inject constructor(
     private val exactAlarmsAllowedState = MutableStateFlow(canScheduleExactAlarms())
     val exactAlarmsAllowed: StateFlow<Boolean> = exactAlarmsAllowedState.asStateFlow()
 
+    private val batteryOptimizationIgnoredState = MutableStateFlow(isIgnoringBatteryOptimizations())
+    val batteryOptimizationIgnored: StateFlow<Boolean> = batteryOptimizationIgnoredState.asStateFlow()
+
     val updateChecksEnabled: StateFlow<Boolean> = updatePreferences.updateChecksEnabled.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -57,10 +61,11 @@ class SettingsViewModel @Inject constructor(
 
     val manualUpdateState: StateFlow<ManualUpdateState> = updateManager.manualState
 
-    fun refreshExactAlarmPermission() {
+    fun refreshReminderReliability() {
         val allowed = canScheduleExactAlarms()
         val changed = allowed != exactAlarmsAllowedState.value
         exactAlarmsAllowedState.value = allowed
+        batteryOptimizationIgnoredState.value = isIgnoringBatteryOptimizations()
         if (allowed && changed) {
             viewModelScope.launch { reminderCoordinator.syncAllSchedules() }
         }
@@ -72,6 +77,22 @@ class SettingsViewModel @Inject constructor(
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         runCatching { context.startActivity(intent) }
     }
+
+    fun openBatteryOptimizationSettings() {
+        val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        runCatching { context.startActivity(intent) }
+            .onFailure { openAppSettings() }
+    }
+
+    fun openAppSettings() {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+            .setData("package:${context.packageName}".toUri())
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        runCatching { context.startActivity(intent) }
+    }
+
+    fun sendTestNotification(): Boolean = notificationService.showTestNotification()
 
     fun setLanguage(value: AppLanguage) {
         viewModelScope.launch {
@@ -133,4 +154,8 @@ class SettingsViewModel @Inject constructor(
     private fun canScheduleExactAlarms(): Boolean =
         context.getSystemService(AlarmManager::class.java)
             ?.canScheduleExactAlarms() == true
+
+    private fun isIgnoringBatteryOptimizations(): Boolean =
+        context.getSystemService(PowerManager::class.java)
+            ?.isIgnoringBatteryOptimizations(context.packageName) == true
 }

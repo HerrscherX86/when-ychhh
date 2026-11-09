@@ -219,9 +219,21 @@ interface AppStrings {
     val enableNotifications: String
     val permissionDenied: String
     val notificationBestEffort: String
-    val exactRemindersTitle: String
-    val exactRemindersHelp: String
     val allowExactReminders: String
+    val reminderReliabilityTitle: String
+    val reminderReliabilityHelp: String
+    val exactAlarmsAllowed: String
+    val exactAlarmsNotAllowed: String
+    val batteryOptimizationAllowed: String
+    val batteryOptimizationRestricted: String
+    val openBatterySettings: String
+    val sendTestNotification: String
+    val testNotificationSent: String
+    val oemHelpTitle: String
+    val oemHelpMessage: String
+    val openAppSettings: String
+    val testNotificationTitle: String
+    val testNotificationMessage: String
     val goalNotifications: String
     val goalNotificationsHelp: String
     val contributionReminderHelp: String
@@ -246,6 +258,7 @@ interface AppStrings {
     val updateCheckInProgress: String
     val upToDate: String
     val updateCheckFailed: String
+    val skipVersion: String
     val language: String
     val languageHelp: String
     val languageEnglish: String
@@ -255,6 +268,20 @@ interface AppStrings {
     val restoreBackupTitle: String
     val restoreBackupMessage: String
     val restore: String
+
+    val itemCreated: String
+    val itemUpdated: String
+    val itemDeleted: String
+    val collectionCreated: String
+    val collectionRenamed: String
+    val collectionDeleted: String
+    val depositRecorded: String
+    val withdrawalRecorded: String
+    val itemPurchased: String
+    val planSaved: String
+    val planDeleted: String
+    val planPausedMessage: String
+    val planResumedMessage: String
 
     val notificationChannelReminders: String
     val notificationChannelRemindersDescription: String

@@ -70,6 +70,12 @@ class UpdateManager @Inject constructor(
         _pendingUpdate.value = null
     }
 
+    suspend fun skipPendingUpdate() {
+        val pending = _pendingUpdate.value ?: return
+        preferences.recordSkip(pending.versionCode)
+        _pendingUpdate.value = null
+    }
+
     private suspend fun evaluate(
         manifest: UpdateManifest,
         manual: Boolean,
@@ -83,6 +89,7 @@ class UpdateManager @Inject constructor(
             nowEpochMillis = now,
             snoozeMillis = SNOOZE_MILLIS,
             manual = manual,
+            skippedVersionCode = preferences.skippedVersionCode(),
         )
 
         if (shouldPrompt) {

@@ -75,23 +75,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.OffsetMapping
-import androidx.compose.ui.text.input.TransformedText
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import id.my.f1zz.whenyah.data.local.entity.CollectionEntity
 import id.my.f1zz.whenyah.domain.i18n.AppStrings
 import id.my.f1zz.whenyah.ui.components.ItemImage
+import id.my.f1zz.whenyah.ui.components.LocalAppFeedback
 import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
 import id.my.f1zz.whenyah.ui.navigation.LocalSetTopBarBackHandler
+import id.my.f1zz.whenyah.ui.util.IdrAmountVisualTransformation
 import id.my.f1zz.whenyah.ui.util.formatIdrDigits
 import java.util.UUID
 
@@ -105,7 +108,10 @@ fun ItemEditorScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val strings = LocalAppStrings.current
+    val feedback = LocalAppFeedback.current
     val focusManager = LocalFocusManager.current
+    val nameFocusRequester = remember { FocusRequester() }
+    val priceFocusRequester = remember { FocusRequester() }
     val setTopBarBackHandler = LocalSetTopBarBackHandler.current
     val latestState by rememberUpdatedState(state)
     val latestOnBack by rememberUpdatedState(onBack)
@@ -122,7 +128,21 @@ fun ItemEditorScreen(
     }
 
     LaunchedEffect(state.savedItemId) {
-        state.savedItemId?.let(onSaved)
+        state.savedItemId?.let { savedId ->
+            feedback.success(if (state.isEditing) strings.itemUpdated else strings.itemCreated)
+            onSaved(savedId)
+        }
+    }
+
+    LaunchedEffect(state.saveError) {
+        state.saveError?.let(feedback::error)
+    }
+
+    LaunchedEffect(state.nameError, state.priceError) {
+        when {
+            state.nameError != null -> nameFocusRequester.requestFocus()
+            state.priceError != null -> priceFocusRequester.requestFocus()
+        }
     }
 
     LaunchedEffect(state.isEditing, state.isLoading) {
@@ -199,14 +219,25 @@ fun ItemEditorScreen(
                     TextField(
                         value = state.name,
                         onValueChange = viewModel::onNameChange,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(nameFocusRequester),
                         label = { Text(strings.nameLabel) },
                         singleLine = true,
                         textStyle = MaterialTheme.typography.titleLarge,
                         shape = RoundedCornerShape(20.dp),
                         colors = editorTextFieldColors(),
                         isError = state.nameError != null,
-                        supportingText = state.nameError?.let { message -> { Text(message) } },
+                        supportingText = state.nameError?.let { message ->
+                            {
+                                Text(
+                                    text = message,
+                                    modifier = Modifier.semantics {
+                                        liveRegion = LiveRegionMode.Assertive
+                                    },
+                                )
+                            }
+                        },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                         keyboardActions = KeyboardActions(
                             onNext = { focusManager.moveFocus(FocusDirection.Down) }
@@ -216,7 +247,9 @@ fun ItemEditorScreen(
                     TextField(
                         value = state.price,
                         onValueChange = viewModel::onPriceChange,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(priceFocusRequester),
                         label = { Text(strings.targetPriceIdr) },
                         prefix = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -236,7 +269,16 @@ fun ItemEditorScreen(
                         shape = RoundedCornerShape(20.dp),
                         colors = editorTextFieldColors(),
                         isError = state.priceError != null,
-                        supportingText = state.priceError?.let { message -> { Text(message) } },
+                        supportingText = state.priceError?.let { message ->
+                            {
+                                Text(
+                                    text = message,
+                                    modifier = Modifier.semantics {
+                                        liveRegion = LiveRegionMode.Assertive
+                                    },
+                                )
+                            }
+                        },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number,
                             imeAction = ImeAction.Done,
@@ -873,25 +915,3 @@ private fun editorTextFieldColors() = TextFieldDefaults.colors(
     cursorColor = MaterialTheme.colorScheme.primary,
 )
 
-private class IdrAmountVisualTransformation : VisualTransformation {
-    override fun filter(text: AnnotatedString): TransformedText {
-        val raw = text.text
-        if (raw.isEmpty()) {
-            return TransformedText(text, OffsetMapping.Identity)
-        }
-
-        val formatted = formatIdrDigits(raw)
-        val offsetMapping = object : OffsetMapping {
-            override fun originalToTransformed(offset: Int): Int =
-                formatIdrDigits(raw.take(offset.coerceIn(0, raw.length))).length
-
-            override fun transformedToOriginal(offset: Int): Int =
-                formatted.take(offset.coerceIn(0, formatted.length)).count(Char::isDigit)
-        }
-
-        return TransformedText(
-            text = AnnotatedString(formatted),
-            offsetMapping = offsetMapping,
-        )
-    }
-}

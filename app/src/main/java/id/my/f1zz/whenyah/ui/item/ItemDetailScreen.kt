@@ -37,6 +37,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -48,6 +50,7 @@ import id.my.f1zz.whenyah.domain.validation.ItemValidation
 import id.my.f1zz.whenyah.ui.components.ConfirmDeleteDialog
 import id.my.f1zz.whenyah.ui.components.EmptyState
 import id.my.f1zz.whenyah.ui.components.ItemImage
+import id.my.f1zz.whenyah.ui.components.LocalAppFeedback
 import id.my.f1zz.whenyah.ui.components.MarkPurchasedDialog
 import id.my.f1zz.whenyah.ui.components.SavingsEventRow
 import id.my.f1zz.whenyah.ui.components.TransactionDialog
@@ -73,6 +76,8 @@ fun ItemDetailScreen(
     val transactionForm by viewModel.transactionForm.collectAsStateWithLifecycle()
     val purchaseState by viewModel.purchaseState.collectAsStateWithLifecycle()
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
+    val transactionCompleted by viewModel.transactionCompleted.collectAsStateWithLifecycle()
+    val feedback = LocalAppFeedback.current
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
     var showPurchaseDialog by rememberSaveable { mutableStateOf(false) }
     var urlError by remember { mutableStateOf<String?>(null) }
@@ -80,11 +85,36 @@ fun ItemDetailScreen(
     val item = state.item
 
     LaunchedEffect(deleted) {
-        if (deleted) onBack()
+        if (deleted) {
+            feedback.success(strings.itemDeleted)
+            onBack()
+        }
     }
 
     LaunchedEffect(purchaseState.purchased) {
-        if (purchaseState.purchased) onPurchased()
+        if (purchaseState.purchased) {
+            feedback.success(strings.itemPurchased)
+            onPurchased()
+        }
+    }
+
+    LaunchedEffect(purchaseState.error) {
+        purchaseState.error?.let(feedback::error)
+    }
+
+    LaunchedEffect(transactionCompleted) {
+        when (transactionCompleted) {
+            TransactionType.DEPOSIT -> feedback.success(strings.depositRecorded)
+            TransactionType.WITHDRAWAL -> feedback.success(strings.withdrawalRecorded)
+            null -> Unit
+        }
+        if (transactionCompleted != null) {
+            viewModel.consumeTransactionCompleted()
+        }
+    }
+
+    LaunchedEffect(transactionForm.error) {
+        transactionForm.error?.let(feedback::error)
     }
 
     when {
@@ -343,7 +373,16 @@ private fun SavingsCard(
                 progress = { animatedProgress },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(8.dp),
+                    .height(8.dp)
+                    .semantics {
+                        contentDescription = if (isGoalReached) {
+                            strings.goalReached
+                        } else {
+                            strings.percentageFunded(
+                                (progress * 100).roundToInt()
+                            )
+                        }
+                    },
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),

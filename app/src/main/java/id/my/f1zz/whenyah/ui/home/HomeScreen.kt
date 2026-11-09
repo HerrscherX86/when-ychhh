@@ -6,6 +6,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -45,9 +47,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -82,6 +90,7 @@ fun HomeScreen(
     val strings = LocalAppStrings.current
     val listState = rememberLazyListState()
     val fabVisible by rememberFabVisibility(listState)
+    var searchFocused by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
         if (state.isLoading) {
@@ -158,7 +167,9 @@ fun HomeScreen(
                     OutlinedTextField(
                         value = state.query,
                         onValueChange = viewModel::onQueryChange,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onFocusChanged { searchFocused = it.isFocused },
                         placeholder = { Text(strings.searchItems) },
                         leadingIcon = {
                             Icon(imageVector = Icons.Outlined.Search, contentDescription = null)
@@ -217,7 +228,7 @@ fun HomeScreen(
         }
 
         ScrollAwareAddFab(
-            visible = fabVisible,
+            visible = fabVisible && !searchFocused,
             onClick = onAddItem,
             contentDescription = strings.addItemDescription,
             modifier = Modifier.align(Alignment.BottomEnd),
@@ -225,6 +236,7 @@ fun HomeScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun OverviewCard(
     summary: DashboardSummary,
@@ -291,13 +303,19 @@ private fun OverviewCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(10.dp)
-                        .clip(CircleShape),
+                        .clip(CircleShape)
+                        .semantics {
+                            contentDescription = strings.percentageFunded(
+                                (summary.overallProgress * 100).roundToInt()
+                            )
+                        },
                     color = MaterialTheme.colorScheme.primary,
                     trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.18f),
                 )
-                Row(
+                FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
                         text = progressLabel(summary, strings),
@@ -661,7 +679,12 @@ private fun NearestGoalCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(8.dp)
-                    .clip(CircleShape),
+                    .clip(CircleShape)
+                    .semantics {
+                        contentDescription = strings.percentageFunded(
+                            (entry.savings.progress * 100).roundToInt()
+                        )
+                    },
                 color = MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant,
             )

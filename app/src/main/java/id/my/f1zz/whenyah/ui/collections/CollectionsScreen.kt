@@ -52,6 +52,7 @@ import id.my.f1zz.whenyah.data.local.entity.CollectionEntity
 import id.my.f1zz.whenyah.domain.i18n.AppStrings
 import id.my.f1zz.whenyah.ui.components.CollectionNameDialog
 import id.my.f1zz.whenyah.ui.components.ConfirmDeleteDialog
+import id.my.f1zz.whenyah.ui.components.LocalAppFeedback
 import id.my.f1zz.whenyah.ui.components.ScreenPhase
 import id.my.f1zz.whenyah.ui.components.ScrollAwareAddFab
 import id.my.f1zz.whenyah.ui.components.rememberFabVisibility
@@ -67,6 +68,7 @@ fun CollectionsScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val strings = LocalAppStrings.current
+    val feedback = LocalAppFeedback.current
     var showCreateDialog by rememberSaveable { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<CollectionEntity?>(null) }
     var deleteTarget by remember { mutableStateOf<CollectionEntity?>(null) }
@@ -154,6 +156,7 @@ fun CollectionsScreen(
             onDismiss = { showCreateDialog = false },
             onConfirm = { name ->
                 viewModel.createCollection(name)
+                feedback.success(strings.collectionCreated)
                 showCreateDialog = false
             },
         )
@@ -167,6 +170,7 @@ fun CollectionsScreen(
             onDismiss = { renameTarget = null },
             onConfirm = { name ->
                 viewModel.renameCollection(collection.id, name)
+                feedback.success(strings.collectionRenamed)
                 renameTarget = null
             },
         )
@@ -178,6 +182,7 @@ fun CollectionsScreen(
             message = strings.deleteCollectionMessage(collection.name),
             onConfirm = {
                 viewModel.deleteCollection(collection.id)
+                feedback.success(strings.collectionDeleted)
                 deleteTarget = null
             },
             onDismiss = { deleteTarget = null },

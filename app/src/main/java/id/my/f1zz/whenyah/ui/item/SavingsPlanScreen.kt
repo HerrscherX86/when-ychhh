@@ -4,6 +4,8 @@ import android.app.TimePickerDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -31,11 +33,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -44,12 +52,15 @@ import id.my.f1zz.whenyah.domain.model.PlanFrequency
 import id.my.f1zz.whenyah.domain.plan.SavingsPlanProjection
 import id.my.f1zz.whenyah.ui.components.ConfirmDeleteDialog
 import id.my.f1zz.whenyah.ui.components.EmptyState
+import id.my.f1zz.whenyah.ui.components.LocalAppFeedback
 import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
+import id.my.f1zz.whenyah.ui.util.IdrAmountVisualTransformation
 import id.my.f1zz.whenyah.ui.util.formatDate
 import id.my.f1zz.whenyah.ui.util.formatIdr
 import id.my.f1zz.whenyah.ui.util.formatTime
 import java.time.LocalTime
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SavingsPlanScreen(
     onFinished: () -> Unit,
@@ -58,10 +69,16 @@ fun SavingsPlanScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val strings = LocalAppStrings.current
+    val feedback = LocalAppFeedback.current
     val context = LocalContext.current
+    val contributionFocusRequester = remember { FocusRequester() }
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(state.saved, state.deleted) {
+        when {
+            state.saved -> feedback.success(strings.planSaved)
+            state.deleted -> feedback.success(strings.planDeleted)
+        }
         if (state.saved || state.deleted) onFinished()
     }
 
@@ -81,6 +98,11 @@ fun SavingsPlanScreen(
             )
         }
         return
+    }
+
+    LaunchedEffect(state.error) {
+        state.error?.let(feedback::error)
+        if (state.error != null) contributionFocusRequester.requestFocus()
     }
 
     Column(
@@ -107,9 +129,12 @@ fun SavingsPlanScreen(
         OutlinedTextField(
             value = state.contribution,
             onValueChange = viewModel::onContributionChange,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(contributionFocusRequester),
             label = { Text(strings.contributionAmountIdr) },
             singleLine = true,
+            visualTransformation = IdrAmountVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             isError = state.error != null,
         )
@@ -118,7 +143,10 @@ fun SavingsPlanScreen(
             text = strings.frequency,
             style = MaterialTheme.typography.labelLarge,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             PlanFrequency.entries.forEach { frequency ->
                 FilterChip(
                     selected = state.frequency == frequency,
@@ -176,6 +204,9 @@ fun SavingsPlanScreen(
                 text = message,
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.semantics {
+                    liveRegion = LiveRegionMode.Assertive
+                },
             )
         }
 
@@ -211,7 +242,12 @@ fun SavingsPlanScreen(
                 },
             )
             OutlinedButton(
-                onClick = viewModel::togglePlanActive,
+                onClick = {
+                    viewModel.togglePlanActive()
+                    feedback.success(
+                        if (plan.active) strings.planPausedMessage else strings.planResumedMessage
+                    )
+                },
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(if (plan.active) strings.pausePlan else strings.resumePlan)

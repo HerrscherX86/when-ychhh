@@ -213,6 +213,8 @@ Untuk maintainer: proses signing dan publikasi dijelaskan di [docs/RELEASING.md]
 
 Versi **1.1** — perbaikan jadwal reminder mingguan/bulanan, pengecekan update dari GitHub, dan migrasi database ke v2. Belum tersedia di Google Play.
 
+Rencana rilis berikutnya: [docs/ROADMAP_V1.2.md](docs/ROADMAP_V1.2.md) (belum diimplementasikan).
+
 ---
 
 ## 📄 Lisensi

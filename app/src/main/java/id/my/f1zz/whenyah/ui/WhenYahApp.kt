@@ -12,6 +12,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -19,8 +21,14 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -36,6 +44,8 @@ import id.my.f1zz.whenyah.ui.archive.ArchiveScreen
 import id.my.f1zz.whenyah.ui.archive.ArchivedItemDetailScreen
 import id.my.f1zz.whenyah.ui.collections.CollectionDetailScreen
 import id.my.f1zz.whenyah.ui.collections.CollectionsScreen
+import id.my.f1zz.whenyah.ui.components.AppFeedback
+import id.my.f1zz.whenyah.ui.components.LocalAppFeedback
 import id.my.f1zz.whenyah.ui.home.ActivityScreen
 import id.my.f1zz.whenyah.ui.home.HomeScreen
 import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
@@ -61,6 +71,12 @@ fun WhenYahApp() {
     }
     val isTopLevel = currentTopLevelDestination != null
     var topBarBackHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val feedbackScope = rememberCoroutineScope()
+    val haptics = LocalHapticFeedback.current
+    val appFeedback = remember(snackbarHostState, feedbackScope, haptics) {
+        AppFeedback(snackbarHostState, feedbackScope, haptics)
+    }
 
     val tabEnter = fadeIn(
         animationSpec = tween(
@@ -103,9 +119,21 @@ fun WhenYahApp() {
     }
 
     Scaffold(
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            )
+        },
         topBar = {
             TopAppBar(
-                title = { Text(title) },
+                title = {
+                    Text(
+                        text = title,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                },
                 navigationIcon = {
                     if (!isTopLevel) {
                         IconButton(
@@ -140,7 +168,13 @@ fun WhenYahApp() {
                                 }
                             },
                             icon = { Icon(destination.icon, contentDescription = null) },
-                            label = { Text(destination.label(strings)) },
+                            label = {
+                                Text(
+                                    text = destination.label(strings),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            },
                         )
                     }
                 }
@@ -148,7 +182,8 @@ fun WhenYahApp() {
         },
     ) { innerPadding ->
         CompositionLocalProvider(
-            LocalSetTopBarBackHandler provides { handler -> topBarBackHandler = handler }
+            LocalAppFeedback provides appFeedback,
+            LocalSetTopBarBackHandler provides { handler -> topBarBackHandler = handler },
         ) {
             NavHost(
                 navController = navController,

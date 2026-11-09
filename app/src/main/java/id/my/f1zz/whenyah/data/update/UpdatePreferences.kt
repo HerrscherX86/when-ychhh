@@ -57,10 +57,20 @@ class UpdatePreferences @Inject constructor(
         }
     }
 
+    suspend fun skippedVersionCode(): Long =
+        preferencesFlow.first()[Keys.SKIPPED_VERSION_CODE] ?: 0L
+
+    suspend fun recordSkip(versionCode: Long) {
+        context.updateDataStore.edit { preferences ->
+            preferences[Keys.SKIPPED_VERSION_CODE] = versionCode
+        }
+    }
+
     private object Keys {
         val CHECKS_ENABLED = booleanPreferencesKey("checks_enabled")
         val LAST_CHECKED_AT = longPreferencesKey("last_checked_at")
         val LAST_PROMPTED_VERSION_CODE = longPreferencesKey("last_prompted_version_code")
         val LAST_PROMPTED_AT = longPreferencesKey("last_prompted_at")
+        val SKIPPED_VERSION_CODE = longPreferencesKey("skipped_version_code")
     }
 }

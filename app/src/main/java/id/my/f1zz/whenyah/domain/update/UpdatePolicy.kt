@@ -15,9 +15,11 @@ object UpdatePolicy {
         nowEpochMillis: Long,
         snoozeMillis: Long,
         manual: Boolean,
+        skippedVersionCode: Long = 0L,
     ): Boolean {
         if (remoteVersionCode <= installedVersionCode) return false
         if (manual) return true
+        if (skippedVersionCode == remoteVersionCode) return false
         if (lastPromptedVersionCode != remoteVersionCode) return true
         return nowEpochMillis - lastPromptedAtEpochMillis >= snoozeMillis
     }

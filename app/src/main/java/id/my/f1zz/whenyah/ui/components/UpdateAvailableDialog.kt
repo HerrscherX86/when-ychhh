@@ -2,6 +2,7 @@ package id.my.f1zz.whenyah.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -19,6 +20,7 @@ fun UpdateAvailableDialog(
     strings: AppStrings,
     onUpdate: () -> Unit,
     onLater: () -> Unit,
+    onSkip: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     AlertDialog(
@@ -35,6 +37,15 @@ fun UpdateAvailableDialog(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 6,
                         overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                TextButton(
+                    onClick = onSkip,
+                    contentPadding = PaddingValues(0.dp),
+                ) {
+                    Text(
+                        text = strings.skipVersion,
+                        style = MaterialTheme.typography.labelLarge,
                     )
                 }
             }

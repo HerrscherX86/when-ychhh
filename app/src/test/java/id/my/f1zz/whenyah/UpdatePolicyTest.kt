@@ -113,4 +113,52 @@ class UpdatePolicyTest {
             )
         )
     }
+
+    @Test
+    fun skippedVersionDoesNotPromptAutomatically() {
+        assertFalse(
+            UpdatePolicy.shouldPrompt(
+                remoteVersionCode = remote,
+                installedVersionCode = installed,
+                lastPromptedVersionCode = 0L,
+                lastPromptedAtEpochMillis = 0L,
+                nowEpochMillis = now,
+                snoozeMillis = snooze,
+                manual = false,
+                skippedVersionCode = remote,
+            )
+        )
+    }
+
+    @Test
+    fun manualCheckBypassesSkippedVersion() {
+        assertTrue(
+            UpdatePolicy.shouldPrompt(
+                remoteVersionCode = remote,
+                installedVersionCode = installed,
+                lastPromptedVersionCode = 0L,
+                lastPromptedAtEpochMillis = 0L,
+                nowEpochMillis = now,
+                snoozeMillis = snooze,
+                manual = true,
+                skippedVersionCode = remote,
+            )
+        )
+    }
+
+    @Test
+    fun newVersionPromptsEvenIfOlderVersionWasSkipped() {
+        assertTrue(
+            UpdatePolicy.shouldPrompt(
+                remoteVersionCode = remote + 1,
+                installedVersionCode = installed,
+                lastPromptedVersionCode = 0L,
+                lastPromptedAtEpochMillis = 0L,
+                nowEpochMillis = now,
+                snoozeMillis = snooze,
+                manual = false,
+                skippedVersionCode = remote,
+            )
+        )
+    }
 }

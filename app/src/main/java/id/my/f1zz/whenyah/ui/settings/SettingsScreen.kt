@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -47,6 +49,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,6 +67,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import id.my.f1zz.whenyah.data.update.ManualUpdateState
 import id.my.f1zz.whenyah.domain.i18n.AppLanguage
+import id.my.f1zz.whenyah.ui.components.LocalAppFeedback
 import id.my.f1zz.whenyah.domain.settings.AccentColor
 import id.my.f1zz.whenyah.domain.settings.SummaryCadence
 import id.my.f1zz.whenyah.domain.settings.ThemeMode
@@ -73,6 +77,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     onOpenArchive: () -> Unit,
@@ -83,10 +88,14 @@ fun SettingsScreen(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val backupState by backupViewModel.uiState.collectAsStateWithLifecycle()
     val exactAlarmsAllowed by viewModel.exactAlarmsAllowed.collectAsStateWithLifecycle()
+    val batteryOptimizationIgnored by
+        viewModel.batteryOptimizationIgnored.collectAsStateWithLifecycle()
     val updateChecksEnabled by viewModel.updateChecksEnabled.collectAsStateWithLifecycle()
     val manualUpdateState by viewModel.manualUpdateState.collectAsStateWithLifecycle()
+    val feedback = LocalAppFeedback.current
     val strings = LocalAppStrings.current
     val context = LocalContext.current
+    var showOemHelp by rememberSaveable { mutableStateOf(false) }
     val versionName = remember(context) {
         runCatching {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
@@ -94,7 +103,15 @@ fun SettingsScreen(
     }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        viewModel.refreshExactAlarmPermission()
+        viewModel.refreshReminderReliability()
+    }
+
+    LaunchedEffect(backupState.message) {
+        backupState.message?.let(feedback::success)
+    }
+
+    LaunchedEffect(backupState.error) {
+        backupState.error?.let(feedback::error)
     }
     var permissionDenied by rememberSaveable { mutableStateOf(false) }
     var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
@@ -154,7 +171,10 @@ fun SettingsScreen(
                     text = strings.theme,
                     style = MaterialTheme.typography.labelLarge,
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     ThemeMode.entries.forEach { mode ->
                         FilterChip(
                             selected = settings.themeMode == mode,
@@ -253,25 +273,87 @@ fun SettingsScreen(
                     onCheckedChange = ::onNotificationsToggle,
                 )
 
-                if (settings.notificationsEnabled && !exactAlarmsAllowed) {
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (settings.notificationsEnabled) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            text = strings.exactRemindersTitle,
+                            text = strings.reminderReliabilityTitle,
                             style = MaterialTheme.typography.labelLarge,
                         )
                         Text(
-                            text = strings.exactRemindersHelp,
+                            text = strings.reminderReliabilityHelp,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+
+                        Text(
+                            text = if (exactAlarmsAllowed) {
+                                strings.exactAlarmsAllowed
+                            } else {
+                                strings.exactAlarmsNotAllowed
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (exactAlarmsAllowed) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.error
+                            },
+                        )
+                        if (!exactAlarmsAllowed) {
+                            OutlinedButton(
+                                onClick = viewModel::openExactAlarmSettings,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 48.dp),
+                                shape = RoundedCornerShape(18.dp),
+                            ) {
+                                Text(strings.allowExactReminders)
+                            }
+                        }
+
+                        Text(
+                            text = if (batteryOptimizationIgnored) {
+                                strings.batteryOptimizationAllowed
+                            } else {
+                                strings.batteryOptimizationRestricted
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (batteryOptimizationIgnored) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.error
+                            },
+                        )
+                        if (!batteryOptimizationIgnored) {
+                            OutlinedButton(
+                                onClick = viewModel::openBatteryOptimizationSettings,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 48.dp),
+                                shape = RoundedCornerShape(18.dp),
+                            ) {
+                                Text(strings.openBatterySettings)
+                            }
+                        }
+
                         OutlinedButton(
-                            onClick = viewModel::openExactAlarmSettings,
+                            onClick = {
+                                val sent = viewModel.sendTestNotification()
+                                if (sent) {
+                                    feedback.success(strings.testNotificationSent)
+                                } else {
+                                    feedback.error(strings.permissionDenied)
+                                }
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .heightIn(min = 48.dp),
                             shape = RoundedCornerShape(18.dp),
                         ) {
-                            Text(strings.allowExactReminders)
+                            Text(strings.sendTestNotification)
+                        }
+
+                        TextButton(onClick = { showOemHelp = true }) {
+                            Text(strings.oemHelpTitle)
                         }
                     }
                 }
@@ -294,7 +376,10 @@ fun SettingsScreen(
                     text = strings.progressSummary,
                     style = MaterialTheme.typography.labelLarge,
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     SummaryCadence.entries.forEach { cadence ->
                         FilterChip(
                             selected = settings.summaryCadence == cadence,
@@ -499,6 +584,34 @@ fun SettingsScreen(
             dismissButton = {
                 TextButton(onClick = { pendingRestoreUri = null }) {
                     Text(strings.cancel)
+                }
+            },
+        )
+    }
+
+    if (showOemHelp) {
+        AlertDialog(
+            onDismissRequest = { showOemHelp = false },
+            title = { Text(strings.oemHelpTitle) },
+            text = { Text(strings.oemHelpMessage) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showOemHelp = false
+                        viewModel.openAppSettings()
+                    },
+                ) {
+                    Text(strings.openAppSettings)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showOemHelp = false
+                        viewModel.openBatteryOptimizationSettings()
+                    },
+                ) {
+                    Text(strings.openBatterySettings)
                 }
             },
         )

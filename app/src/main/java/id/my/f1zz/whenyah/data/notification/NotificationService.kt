@@ -107,6 +107,18 @@ class NotificationService @Inject constructor(
         )
     }
 
+    fun showTestNotification(): Boolean {
+        if (!canPostNotifications()) return false
+        val strings = languageStore.strings()
+        post(
+            channelId = CHANNEL_REMINDERS,
+            notificationId = TEST_NOTIFICATION_ID,
+            title = strings.testNotificationTitle,
+            message = strings.testNotificationMessage,
+        )
+        return true
+    }
+
     fun showSummary(
         activeItemCount: Int,
         totalSavedIdr: Long,
@@ -167,5 +179,6 @@ class NotificationService @Inject constructor(
         const val CHANNEL_SUMMARIES = "progress_summaries"
         const val GOAL_NOTIFICATION_BASE = 100_000
         const val SUMMARY_NOTIFICATION_ID = 5001
+        const val TEST_NOTIFICATION_ID = 5002
     }
 }
