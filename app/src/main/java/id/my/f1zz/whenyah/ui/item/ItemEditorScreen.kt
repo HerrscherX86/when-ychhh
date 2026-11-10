@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -49,6 +51,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -311,6 +314,7 @@ fun ItemEditorScreen(
                     onToggle = { showMoreDetails = !showMoreDetails },
                     category = state.category,
                     onCategoryChange = viewModel::onCategoryChange,
+                    categorySuggestions = state.categorySuggestions,
                     purchaseUrl = state.purchaseUrl,
                     onPurchaseUrlChange = viewModel::onPurchaseUrlChange,
                     notes = state.notes,
@@ -567,6 +571,7 @@ private fun CollectionSelector(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AdditionalDetailsSection(
     expanded: Boolean,
@@ -574,6 +579,7 @@ private fun AdditionalDetailsSection(
     onToggle: () -> Unit,
     category: String,
     onCategoryChange: (String) -> Unit,
+    categorySuggestions: List<String>,
     purchaseUrl: String,
     onPurchaseUrlChange: (String) -> Unit,
     notes: String,
@@ -622,6 +628,31 @@ private fun AdditionalDetailsSection(
                     modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
+                    if (categorySuggestions.isNotEmpty()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                text = strings.categorySuggestionsLabel,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                categorySuggestions.forEach { suggestion ->
+                                    val isSelected =
+                                        category.equals(suggestion, ignoreCase = true)
+                                    FilterChip(
+                                        selected = isSelected,
+                                        onClick = {
+                                            onCategoryChange(if (isSelected) "" else suggestion)
+                                        },
+                                        label = { Text(suggestion) },
+                                    )
+                                }
+                            }
+                        }
+                    }
                     TextField(
                         value = category,
                         onValueChange = onCategoryChange,

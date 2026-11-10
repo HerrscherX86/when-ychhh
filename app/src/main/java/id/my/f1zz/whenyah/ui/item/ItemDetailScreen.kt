@@ -6,11 +6,14 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -20,6 +23,7 @@ import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -165,8 +169,15 @@ fun ItemDetailScreen(
                     surplusIdr = state.savings.surplusIdr,
                     progress = state.savings.progress,
                     isGoalReached = state.savings.isGoalReached,
+                    planContributionIdr = state.plan
+                        ?.takeIf { it.active }
+                        ?.contributionIdr
+                        ?.takeIf { it > 0 },
                     onDeposit = { viewModel.startTransaction(TransactionType.DEPOSIT) },
                     onWithdraw = { viewModel.startTransaction(TransactionType.WITHDRAWAL) },
+                    onQuickDeposit = { amount ->
+                        viewModel.startTransaction(TransactionType.DEPOSIT, amount)
+                    },
                 )
 
                 PlanCard(
@@ -327,6 +338,7 @@ fun ItemDetailScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SavingsCard(
     availableIdr: Long,
@@ -335,8 +347,10 @@ private fun SavingsCard(
     surplusIdr: Long,
     progress: Float,
     isGoalReached: Boolean,
+    planContributionIdr: Long?,
     onDeposit: () -> Unit,
     onWithdraw: () -> Unit,
+    onQuickDeposit: (Long) -> Unit,
 ) {
     val strings = LocalAppStrings.current
     val animatedProgress by animateFloatAsState(
@@ -413,16 +427,31 @@ private fun SavingsCard(
                     color = MaterialTheme.colorScheme.tertiary,
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = onDeposit, modifier = Modifier.weight(1f)) {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Button(
+                    onClick = onDeposit,
+                    modifier = Modifier.heightIn(min = 48.dp),
+                ) {
                     Text(strings.addSavings)
                 }
                 OutlinedButton(
                     onClick = onWithdraw,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.heightIn(min = 48.dp),
                     enabled = availableIdr > 0,
                 ) {
                     Text(strings.withdraw)
+                }
+                if (planContributionIdr != null) {
+                    FilledTonalButton(
+                        onClick = { onQuickDeposit(planContributionIdr) },
+                        modifier = Modifier.heightIn(min = 48.dp),
+                    ) {
+                        Text(strings.quickSave(formatIdr(planContributionIdr)))
+                    }
                 }
             }
         }

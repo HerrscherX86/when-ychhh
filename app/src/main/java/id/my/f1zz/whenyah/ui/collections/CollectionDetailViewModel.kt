@@ -7,6 +7,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import id.my.f1zz.whenyah.data.local.entity.CollectionEntity
 import id.my.f1zz.whenyah.data.repository.WishlistItemWithSavings
 import id.my.f1zz.whenyah.data.repository.WishlistRepository
+import id.my.f1zz.whenyah.domain.dashboard.DashboardCalculator
+import id.my.f1zz.whenyah.domain.dashboard.DashboardItem
+import id.my.f1zz.whenyah.domain.dashboard.DashboardSummary
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -17,6 +20,7 @@ import javax.inject.Inject
 data class CollectionDetailUiState(
     val collection: CollectionEntity? = null,
     val items: List<WishlistItemWithSavings> = emptyList(),
+    val totals: DashboardSummary = DashboardSummary.Empty,
     val isLoading: Boolean = true,
 )
 
@@ -38,6 +42,14 @@ class CollectionDetailViewModel @Inject constructor(
         CollectionDetailUiState(
             collection = collection,
             items = items,
+            totals = DashboardCalculator.summarize(
+                items.map {
+                    DashboardItem(
+                        targetPriceIdr = it.item.targetPriceIdr,
+                        availableIdr = it.savings.availableIdr,
+                    )
+                }
+            ),
             isLoading = false,
         )
     }.stateIn(

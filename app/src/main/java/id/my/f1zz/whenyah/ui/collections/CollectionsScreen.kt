@@ -1,6 +1,7 @@
 package id.my.f1zz.whenyah.ui.collections
 
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -32,6 +35,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,12 +47,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import id.my.f1zz.whenyah.data.local.entity.CollectionEntity
+import id.my.f1zz.whenyah.domain.dashboard.DashboardSummary
 import id.my.f1zz.whenyah.domain.i18n.AppStrings
 import id.my.f1zz.whenyah.ui.components.CollectionNameDialog
 import id.my.f1zz.whenyah.ui.components.ConfirmDeleteDialog
@@ -58,7 +66,9 @@ import id.my.f1zz.whenyah.ui.components.ScrollAwareAddFab
 import id.my.f1zz.whenyah.ui.components.rememberFabVisibility
 import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
 import id.my.f1zz.whenyah.ui.theme.AppMotion
+import id.my.f1zz.whenyah.ui.util.formatIdr
 import java.util.UUID
+import kotlin.math.roundToInt
 
 @Composable
 fun CollectionsScreen(
@@ -128,6 +138,7 @@ fun CollectionsScreen(
                             CollectionCard(
                                 collection = summary.collection,
                                 itemCount = summary.itemCount,
+                                totals = state.totals[summary.collection.id],
                                 strings = strings,
                                 onClick = { onCollectionClick(summary.collection.id) },
                                 onRename = { renameTarget = summary.collection },
@@ -270,12 +281,22 @@ private fun CollectionMetric(
 private fun CollectionCard(
     collection: CollectionEntity,
     itemCount: Int,
+    totals: DashboardSummary?,
     strings: AppStrings,
     onClick: () -> Unit,
     onRename: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val animatedProgress by animateFloatAsState(
+        targetValue = totals?.overallProgress ?: 0f,
+        animationSpec = tween(
+            durationMillis = AppMotion.SlowMillis,
+            easing = AppMotion.StandardEasing,
+        ),
+        label = "collectionProgress",
+    )
+    val isFunded = (totals?.overallProgress ?: 0f) >= 1f
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
@@ -316,6 +337,35 @@ private fun CollectionCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                if (totals != null && totals.activeItemCount > 0) {
+                    Text(
+                        text = strings.targetAndSaved(
+                            target = formatIdr(totals.totalTargetIdr),
+                            saved = formatIdr(totals.totalAvailableIdr),
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    LinearProgressIndicator(
+                        progress = { animatedProgress },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 6.dp)
+                            .height(6.dp)
+                            .clip(CircleShape)
+                            .semantics {
+                                contentDescription = strings.percentageFunded(
+                                    (totals.overallProgress * 100).roundToInt()
+                                )
+                            },
+                        color = if (isFunded) {
+                            MaterialTheme.colorScheme.tertiary
+                        } else {
+                            MaterialTheme.colorScheme.primary
+                        },
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    )
+                }
             }
             CollectionActionsMenu(
                 strings = strings,

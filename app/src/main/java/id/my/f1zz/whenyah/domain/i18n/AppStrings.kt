@@ -68,14 +68,33 @@ interface AppStrings {
     val viewAll: String
     val upcomingPlans: String
     val closestGoals: String
+    val readyToBuy: String
     val allItems: String
     val searchItems: String
     val sortRecent: String
     val sortName: String
+    val sortProgress: String
+    val sortPrice: String
+    val filterAction: String
+    val filtersTitle: String
+    val filterAll: String
+    val filterGoalReached: String
+    val filterStillSaving: String
+    val filterHasPlan: String
+    val filterNoPlan: String
+    val filterClearAll: String
+    val filterCategory: String
+    val filterCollection: String
+    val filterStatus: String
+    val filterPlan: String
+    val clearFilterDescription: String
+    val done: String
     val noItemsYet: String
     val noItemsMessage: String
     val noMatchingItems: String
     val noMatchingMessage: String
+    val noFilteredItems: String
+    val noFilteredItemsMessage: String
     val addItem: String
     val addItemDescription: String
     val noActivityYet: String
@@ -168,6 +187,7 @@ interface AppStrings {
     val nameLabel: String
     val targetPriceIdr: String
     val categoryOptional: String
+    val categorySuggestionsLabel: String
     val noCollection: String
     val purchaseUrlOptional: String
     val notesOptional: String
@@ -306,6 +326,7 @@ interface AppStrings {
     fun remainingLabel(value: String): String
     fun percentageSaved(percent: Int): String
     fun percentageFunded(percent: Int): String
+    fun quickSave(amount: String): String
     fun contributionCount(count: Long): String
     fun estimatedCompletion(date: String): String
     fun completionDate(date: String): String

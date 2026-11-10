@@ -16,19 +16,21 @@ import id.my.f1zz.whenyah.domain.model.SavingsEventType
 import id.my.f1zz.whenyah.domain.plan.SavingsPlanCalculator
 import id.my.f1zz.whenyah.domain.plan.SavingsPlanProjection
 import id.my.f1zz.whenyah.domain.plan.observeToday
+import id.my.f1zz.whenyah.domain.wishlist.GoalFilter
+import id.my.f1zz.whenyah.domain.wishlist.ItemSortOrder
+import id.my.f1zz.whenyah.domain.wishlist.PlanFilter
+import id.my.f1zz.whenyah.domain.wishlist.WishlistItemFacts
+import id.my.f1zz.whenyah.domain.wishlist.WishlistQuery
+import id.my.f1zz.whenyah.domain.wishlist.WishlistQueryEngine
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
-
-enum class ItemSort {
-    RECENT,
-    NAME,
-}
 
 data class DashboardActivity(
     val event: SavingsEventEntity,
@@ -48,8 +50,16 @@ data class HomeUiState(
     val recentActivity: List<DashboardActivity> = emptyList(),
     val upcomingPlans: List<DashboardUpcomingPlan> = emptyList(),
     val nearestGoals: List<WishlistItemWithSavings> = emptyList(),
-    val query: String = "",
-    val sort: ItemSort = ItemSort.RECENT,
+    val readyToBuy: List<WishlistItemWithSavings> = emptyList(),
+    val queryText: String = "",
+    val sort: ItemSortOrder = ItemSortOrder.RECENT,
+    val collectionId: UUID? = null,
+    val category: String? = null,
+    val goal: GoalFilter = GoalFilter.ALL,
+    val plan: PlanFilter = PlanFilter.ALL,
+    val isFiltering: Boolean = false,
+    val collectionOptions: List<Pair<UUID, String>> = emptyList(),
+    val categoryOptions: List<String> = emptyList(),
     val isLoading: Boolean = true,
 )
 
@@ -59,8 +69,7 @@ class HomeViewModel @Inject constructor(
     savingsRepository: SavingsRepository,
     savingsPlanRepository: SavingsPlanRepository,
 ) : ViewModel() {
-    private val query = MutableStateFlow("")
-    private val sort = MutableStateFlow(ItemSort.RECENT)
+    private val query = MutableStateFlow(WishlistQuery())
 
     private val dashboardData = combine(
         savingsRepository.observeAllEvents(),
@@ -73,11 +82,11 @@ class HomeViewModel @Inject constructor(
         repository.observeCollections(),
         dashboardData,
         query,
-        sort,
-    ) { items, collections, extra, currentQuery, currentSort ->
+    ) { items, collections, extra, currentQuery ->
         val (events, plans, today) = extra
         val collectionNames = collections.associate { it.collection.id to it.collection.name }
         val itemsById = items.associateBy { it.item.id }
+        val plannedItemIds = plans.mapTo(mutableSetOf()) { it.itemId }
 
         val summary = DashboardCalculator.summarize(
             items.map {
@@ -139,25 +148,39 @@ class HomeViewModel @Inject constructor(
             .sortedBy { it.savings.remainingIdr }
             .take(5)
 
-        val filtered = if (currentQuery.isBlank()) {
-            items
-        } else {
-            items.filter { it.item.name.contains(currentQuery, ignoreCase = true) }
-        }
-        val sorted = when (currentSort) {
-            ItemSort.RECENT -> filtered.sortedByDescending { it.item.updatedAt }
-            ItemSort.NAME -> filtered.sortedBy { it.item.name.lowercase() }
-        }
+        val readyToBuy = items
+            .filter { it.savings.isGoalReached && it.item.targetPriceIdr > 0 }
+            .sortedBy { it.item.name.lowercase() }
+            .take(5)
+
+        val matches = WishlistQueryEngine.applyQuery(
+            items = items.map { it.toFacts(hasPlan = it.item.id in plannedItemIds) },
+            query = currentQuery,
+        )
+        val ordered = matches.mapNotNull { facts -> itemsById[facts.id] }
+
+        val categoryOptions = items
+            .mapNotNull { it.item.category?.trim()?.takeIf(String::isNotBlank) }
+            .distinct()
+            .sorted()
 
         HomeUiState(
-            items = sorted,
+            items = ordered,
             collectionNames = collectionNames,
             summary = summary,
             recentActivity = recentActivity,
             upcomingPlans = upcomingPlans,
             nearestGoals = nearestGoals,
-            query = currentQuery,
-            sort = currentSort,
+            readyToBuy = readyToBuy,
+            queryText = currentQuery.text,
+            sort = currentQuery.sort,
+            collectionId = currentQuery.collectionId,
+            category = currentQuery.category,
+            goal = currentQuery.goal,
+            plan = currentQuery.plan,
+            isFiltering = currentQuery.isFiltering,
+            collectionOptions = collections.map { it.collection.id to it.collection.name },
+            categoryOptions = categoryOptions,
             isLoading = false,
         )
     }.stateIn(
@@ -167,10 +190,50 @@ class HomeViewModel @Inject constructor(
     )
 
     fun onQueryChange(value: String) {
-        query.value = value
+        query.update { it.copy(text = value) }
     }
 
-    fun onSortChange(value: ItemSort) {
-        sort.value = value
+    fun onSortChange(value: ItemSortOrder) {
+        query.update { it.copy(sort = value) }
     }
+
+    fun onCollectionFilterChange(value: UUID?) {
+        query.update { it.copy(collectionId = value) }
+    }
+
+    fun onCategoryFilterChange(value: String?) {
+        query.update { it.copy(category = value) }
+    }
+
+    fun onGoalFilterChange(value: GoalFilter) {
+        query.update { it.copy(goal = value) }
+    }
+
+    fun onPlanFilterChange(value: PlanFilter) {
+        query.update { it.copy(plan = value) }
+    }
+
+    fun clearFilters() {
+        query.update {
+            it.copy(
+                collectionId = null,
+                category = null,
+                goal = GoalFilter.ALL,
+                plan = PlanFilter.ALL,
+            )
+        }
+    }
+
+    private fun WishlistItemWithSavings.toFacts(hasPlan: Boolean) = WishlistItemFacts(
+        id = item.id,
+        name = item.name,
+        updatedAt = item.updatedAt,
+        targetPriceIdr = item.targetPriceIdr,
+        availableIdr = savings.availableIdr,
+        progress = savings.progress,
+        isGoalReached = savings.isGoalReached,
+        collectionId = item.collectionId,
+        category = item.category,
+        hasPlan = hasPlan,
+    )
 }

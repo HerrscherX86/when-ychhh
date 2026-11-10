@@ -130,8 +130,11 @@ class ItemDetailViewModel @Inject constructor(
         _transactionCompleted.value = null
     }
 
-    fun startTransaction(type: TransactionType) {
-        _transactionForm.value = TransactionFormState(type = type)
+    fun startTransaction(type: TransactionType, initialAmountIdr: Long? = null) {
+        _transactionForm.value = TransactionFormState(
+            type = type,
+            amount = initialAmountIdr?.toString().orEmpty(),
+        )
     }
 
     fun dismissTransaction() {

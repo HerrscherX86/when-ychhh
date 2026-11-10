@@ -27,24 +27,30 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.outlined.Archive
+import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -63,7 +69,11 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import id.my.f1zz.whenyah.data.repository.WishlistItemWithSavings
 import id.my.f1zz.whenyah.domain.dashboard.DashboardSummary
+import id.my.f1zz.whenyah.domain.i18n.AppStrings
 import id.my.f1zz.whenyah.domain.model.SavingsEventType
+import id.my.f1zz.whenyah.domain.wishlist.GoalFilter
+import id.my.f1zz.whenyah.domain.wishlist.ItemSortOrder
+import id.my.f1zz.whenyah.domain.wishlist.PlanFilter
 import id.my.f1zz.whenyah.ui.components.EmptyState
 import id.my.f1zz.whenyah.ui.components.ItemCard
 import id.my.f1zz.whenyah.ui.components.ScrollAwareAddFab
@@ -76,6 +86,7 @@ import id.my.f1zz.whenyah.ui.util.formatShortDate
 import java.util.UUID
 import kotlin.math.roundToInt
 
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onAddItem: () -> Unit,
@@ -91,6 +102,7 @@ fun HomeScreen(
     val listState = rememberLazyListState()
     val fabVisible by rememberFabVisibility(listState)
     var searchFocused by remember { mutableStateOf(false) }
+    var showFilters by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
         if (state.isLoading) {
@@ -156,16 +168,26 @@ fun HomeScreen(
                     }
                 }
 
+                if (state.readyToBuy.isNotEmpty()) {
+                    item { SectionHeader(title = strings.readyToBuy) }
+                    item {
+                        ReadyToBuyRow(
+                            goals = state.readyToBuy,
+                            onItemClick = onItemClick,
+                        )
+                    }
+                }
+
                 item {
                     SectionHeader(
                         title = strings.allItems,
-                        action = { CountBadge(state.summary.activeItemCount) },
+                        action = { CountBadge(state.items.size) },
                     )
                 }
 
                 item {
                     OutlinedTextField(
-                        value = state.query,
+                        value = state.queryText,
                         onValueChange = viewModel::onQueryChange,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -184,32 +206,80 @@ fun HomeScreen(
                 }
 
                 item {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(
-                            selected = state.sort == ItemSort.RECENT,
-                            onClick = { viewModel.onSortChange(ItemSort.RECENT) },
-                            label = { Text(strings.sortRecent) },
-                        )
-                        FilterChip(
-                            selected = state.sort == ItemSort.NAME,
-                            onClick = { viewModel.onSortChange(ItemSort.NAME) },
-                            label = { Text(strings.sortName) },
-                        )
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            itemVerticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            SortChip(
+                                selected = state.sort == ItemSortOrder.RECENT,
+                                label = strings.sortRecent,
+                                onClick = { viewModel.onSortChange(ItemSortOrder.RECENT) },
+                            )
+                            SortChip(
+                                selected = state.sort == ItemSortOrder.NAME,
+                                label = strings.sortName,
+                                onClick = { viewModel.onSortChange(ItemSortOrder.NAME) },
+                            )
+                            SortChip(
+                                selected = state.sort == ItemSortOrder.PROGRESS,
+                                label = strings.sortProgress,
+                                onClick = { viewModel.onSortChange(ItemSortOrder.PROGRESS) },
+                            )
+                            SortChip(
+                                selected = state.sort == ItemSortOrder.TARGET_PRICE,
+                                label = strings.sortPrice,
+                                onClick = { viewModel.onSortChange(ItemSortOrder.TARGET_PRICE) },
+                            )
+                        }
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            OutlinedButton(
+                                onClick = { showFilters = true },
+                                shape = RoundedCornerShape(20.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.FilterList,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(strings.filterAction)
+                            }
+                            if (state.isFiltering) {
+                                TextButton(onClick = viewModel::clearFilters) {
+                                    Text(strings.filterClearAll)
+                                }
+                            }
+                        }
+                        if (state.isFiltering) {
+                            AppliedFilterChips(
+                                state = state,
+                                strings = strings,
+                                onClearCollection = { viewModel.onCollectionFilterChange(null) },
+                                onClearCategory = { viewModel.onCategoryFilterChange(null) },
+                                onClearGoal = { viewModel.onGoalFilterChange(GoalFilter.ALL) },
+                                onClearPlan = { viewModel.onPlanFilterChange(PlanFilter.ALL) },
+                            )
+                        }
                     }
                 }
 
                 if (state.items.isEmpty()) {
                     item {
                         EmptyState(
-                            title = if (state.query.isBlank()) {
-                                strings.noItemsYet
-                            } else {
-                                strings.noMatchingItems
+                            title = when {
+                                state.isFiltering -> strings.noFilteredItems
+                                state.queryText.isNotBlank() -> strings.noMatchingItems
+                                else -> strings.noItemsYet
                             },
-                            message = if (state.query.isBlank()) {
-                                strings.noItemsMessage
-                            } else {
-                                strings.noMatchingMessage
+                            message = when {
+                                state.isFiltering -> strings.noFilteredItemsMessage
+                                state.queryText.isNotBlank() -> strings.noMatchingMessage
+                                else -> strings.noItemsMessage
                             },
                         )
                     }
@@ -233,6 +303,257 @@ fun HomeScreen(
             contentDescription = strings.addItemDescription,
             modifier = Modifier.align(Alignment.BottomEnd),
         )
+    }
+
+    if (showFilters) {
+        HomeFilterSheet(
+            state = state,
+            onDismiss = { showFilters = false },
+            onCollectionChange = viewModel::onCollectionFilterChange,
+            onCategoryChange = viewModel::onCategoryFilterChange,
+            onGoalChange = viewModel::onGoalFilterChange,
+            onPlanChange = viewModel::onPlanFilterChange,
+            onClearAll = viewModel::clearFilters,
+        )
+    }
+}
+
+@Composable
+private fun SortChip(
+    selected: Boolean,
+    label: String,
+    onClick: () -> Unit,
+) {
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = { Text(label) },
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AppliedFilterChips(
+    state: HomeUiState,
+    strings: AppStrings,
+    onClearCollection: () -> Unit,
+    onClearCategory: () -> Unit,
+    onClearGoal: () -> Unit,
+    onClearPlan: () -> Unit,
+) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        state.collectionId?.let { id ->
+            RemovableFilterChip(
+                label = state.collectionNames[id] ?: strings.filterCollection,
+                contentDescription = strings.clearFilterDescription,
+                onRemove = onClearCollection,
+            )
+        }
+        state.category?.let { category ->
+            RemovableFilterChip(
+                label = category,
+                contentDescription = strings.clearFilterDescription,
+                onRemove = onClearCategory,
+            )
+        }
+        if (state.goal != GoalFilter.ALL) {
+            RemovableFilterChip(
+                label = when (state.goal) {
+                    GoalFilter.REACHED -> strings.filterGoalReached
+                    GoalFilter.NOT_REACHED -> strings.filterStillSaving
+                    GoalFilter.ALL -> strings.filterAll
+                },
+                contentDescription = strings.clearFilterDescription,
+                onRemove = onClearGoal,
+            )
+        }
+        if (state.plan != PlanFilter.ALL) {
+            RemovableFilterChip(
+                label = when (state.plan) {
+                    PlanFilter.HAS_PLAN -> strings.filterHasPlan
+                    PlanFilter.NO_PLAN -> strings.filterNoPlan
+                    PlanFilter.ALL -> strings.filterAll
+                },
+                contentDescription = strings.clearFilterDescription,
+                onRemove = onClearPlan,
+            )
+        }
+    }
+}
+
+@Composable
+private fun RemovableFilterChip(
+    label: String,
+    contentDescription: String,
+    onRemove: () -> Unit,
+) {
+    FilterChip(
+        selected = true,
+        onClick = onRemove,
+        label = { Text(label) },
+        trailingIcon = {
+            Icon(
+                imageVector = Icons.Filled.Close,
+                contentDescription = contentDescription,
+                modifier = Modifier.size(16.dp),
+            )
+        },
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HomeFilterSheet(
+    state: HomeUiState,
+    onDismiss: () -> Unit,
+    onCollectionChange: (UUID?) -> Unit,
+    onCategoryChange: (String?) -> Unit,
+    onGoalChange: (GoalFilter) -> Unit,
+    onPlanChange: (PlanFilter) -> Unit,
+    onClearAll: () -> Unit,
+) {
+    val strings = LocalAppStrings.current
+    val sheetState = rememberModalBottomSheetState()
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 20.dp, bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(
+                text = strings.filtersTitle,
+                style = MaterialTheme.typography.headlineSmall,
+            )
+
+            FilterGroup(title = strings.filterStatus) {
+                FilterChip(
+                    selected = state.goal == GoalFilter.ALL,
+                    onClick = { onGoalChange(GoalFilter.ALL) },
+                    label = { Text(strings.filterAll) },
+                )
+                FilterChip(
+                    selected = state.goal == GoalFilter.REACHED,
+                    onClick = { onGoalChange(GoalFilter.REACHED) },
+                    label = { Text(strings.filterGoalReached) },
+                )
+                FilterChip(
+                    selected = state.goal == GoalFilter.NOT_REACHED,
+                    onClick = { onGoalChange(GoalFilter.NOT_REACHED) },
+                    label = { Text(strings.filterStillSaving) },
+                )
+            }
+
+            FilterGroup(title = strings.filterPlan) {
+                FilterChip(
+                    selected = state.plan == PlanFilter.ALL,
+                    onClick = { onPlanChange(PlanFilter.ALL) },
+                    label = { Text(strings.filterAll) },
+                )
+                FilterChip(
+                    selected = state.plan == PlanFilter.HAS_PLAN,
+                    onClick = { onPlanChange(PlanFilter.HAS_PLAN) },
+                    label = { Text(strings.filterHasPlan) },
+                )
+                FilterChip(
+                    selected = state.plan == PlanFilter.NO_PLAN,
+                    onClick = { onPlanChange(PlanFilter.NO_PLAN) },
+                    label = { Text(strings.filterNoPlan) },
+                )
+            }
+
+            if (state.categoryOptions.isNotEmpty()) {
+                FilterGroup(title = strings.filterCategory) {
+                    FilterChip(
+                        selected = state.category == null,
+                        onClick = { onCategoryChange(null) },
+                        label = { Text(strings.filterAll) },
+                    )
+                    state.categoryOptions.forEach { category ->
+                        FilterChip(
+                            selected = state.category.equals(category, ignoreCase = true),
+                            onClick = {
+                                onCategoryChange(
+                                    if (state.category.equals(category, ignoreCase = true)) {
+                                        null
+                                    } else {
+                                        category
+                                    }
+                                )
+                            },
+                            label = { Text(category) },
+                        )
+                    }
+                }
+            }
+
+            if (state.collectionOptions.isNotEmpty()) {
+                FilterGroup(title = strings.filterCollection) {
+                    FilterChip(
+                        selected = state.collectionId == null,
+                        onClick = { onCollectionChange(null) },
+                        label = { Text(strings.filterAll) },
+                    )
+                    state.collectionOptions.forEach { (id, name) ->
+                        FilterChip(
+                            selected = state.collectionId == id,
+                            onClick = {
+                                onCollectionChange(if (state.collectionId == id) null else id)
+                            },
+                            label = { Text(name) },
+                        )
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(
+                    onClick = onClearAll,
+                    enabled = state.isFiltering,
+                ) {
+                    Text(strings.filterClearAll)
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                OutlinedButton(
+                    onClick = onDismiss,
+                    shape = RoundedCornerShape(20.dp),
+                ) {
+                    Text(strings.done)
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FilterGroup(
+    title: String,
+    content: @Composable () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            content()
+        }
     }
 }
 
@@ -626,7 +947,7 @@ private fun NearestGoalsRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         items(items = goals, key = { "nearest-${it.item.id}" }) { entry ->
-            NearestGoalCard(
+            GoalCarouselCard(
                 entry = entry,
                 onClick = { onItemClick(entry.item.id) },
                 modifier = Modifier.animateItem(),
@@ -636,20 +957,44 @@ private fun NearestGoalsRow(
 }
 
 @Composable
-private fun NearestGoalCard(
+private fun ReadyToBuyRow(
+    goals: List<WishlistItemWithSavings>,
+    onItemClick: (UUID) -> Unit,
+) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        items(items = goals, key = { "ready-${it.item.id}" }) { entry ->
+            GoalCarouselCard(
+                entry = entry,
+                onClick = { onItemClick(entry.item.id) },
+                modifier = Modifier.animateItem(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun GoalCarouselCard(
     entry: WishlistItemWithSavings,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalAppStrings.current
+    val isFunded = entry.savings.isGoalReached
     val animatedProgress by animateFloatAsState(
         targetValue = entry.savings.progress,
         animationSpec = tween(
             durationMillis = AppMotion.SlowMillis,
             easing = AppMotion.StandardEasing,
         ),
-        label = "nearestGoalProgress",
+        label = "goalCarouselProgress",
     )
+    val accentColor = if (isFunded) {
+        MaterialTheme.colorScheme.tertiary
+    } else {
+        MaterialTheme.colorScheme.primary
+    }
     Card(
         onClick = onClick,
         modifier = modifier.width(260.dp),
@@ -670,9 +1015,13 @@ private fun NearestGoalCard(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = strings.amountLeft(formatIdr(entry.savings.remainingIdr)),
+                text = if (isFunded) {
+                    strings.goalReached
+                } else {
+                    strings.amountLeft(formatIdr(entry.savings.remainingIdr))
+                },
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
+                color = accentColor,
             )
             LinearProgressIndicator(
                 progress = { animatedProgress },
@@ -685,7 +1034,7 @@ private fun NearestGoalCard(
                             (entry.savings.progress * 100).roundToInt()
                         )
                     },
-                color = MaterialTheme.colorScheme.primary,
+                color = accentColor,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant,
             )
             Row(

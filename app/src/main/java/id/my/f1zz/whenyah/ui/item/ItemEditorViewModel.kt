@@ -31,6 +31,7 @@ data class ItemFormState(
     val collectionId: UUID? = null,
     val imageRelativePath: String? = null,
     val collections: List<CollectionEntity> = emptyList(),
+    val categorySuggestions: List<String> = emptyList(),
     val nameError: String? = null,
     val priceError: String? = null,
     val purchaseUrlError: String? = null,
@@ -66,6 +67,22 @@ class ItemEditorViewModel @Inject constructor(
             repository.observeCollections().collect { collections ->
                 _uiState.update { state ->
                     state.copy(collections = collections.map { it.collection })
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            repository.observeActiveItemsWithSavings().collect { entries ->
+                val suggestions = entries
+                    .mapNotNull { it.item.category?.trim()?.takeIf(String::isNotBlank) }
+                    .distinct()
+                    .sorted()
+                _uiState.update { state ->
+                    if (state.categorySuggestions == suggestions) {
+                        state
+                    } else {
+                        state.copy(categorySuggestions = suggestions)
+                    }
                 }
             }
         }
