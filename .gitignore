@@ -31,6 +31,15 @@ app/release/
 *.log
 *.hprof
 
+# Python bytecode (agent skill scripts)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Agent tooling state (machine-local; duplicates the tracked .opencode/skills)
+.commandcode/
+
 # OS files
 .DS_Store
 Thumbs.db
