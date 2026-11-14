@@ -57,6 +57,8 @@ object EnglishStrings : AppStrings {
     override val overviewTab = "Overview"
     override val itemsTab = "Items"
     override val nextUp = "Next up"
+    override val details = "Details"
+    override val manageItem = "Manage item"
 
     override val totalSaved = "Total saved"
     override val archiveShort = "Archive"
@@ -244,6 +246,7 @@ object EnglishStrings : AppStrings {
     override val allowExactReminders = "Allow exact alarms"
     override val reminderReliabilityTitle = "Reminder reliability"
     override val reminderReliabilityHelp = "Android can delay background reminders. Exact alarms and background activity help."
+    override val remindersAndSummaries = "Reminders & summaries"
     override val exactAlarmsAllowed = "Exact alarms are allowed."
     override val exactAlarmsNotAllowed = "Exact alarms aren't allowed. Reminders may be late."
     override val batteryOptimizationAllowed = "Battery optimization isn't holding When Yah back."
@@ -344,8 +347,6 @@ object EnglishStrings : AppStrings {
         if (count == 1) "1 item" else "$count items"
 
     override fun transactionCount(count: Int): String = "$count transactions"
-
-    override fun viewAllTransactions(count: Int): String = "View all $count transactions"
 
     override fun targetAndSaved(target: String, saved: String): String =
         "Target $target • Saved $saved"

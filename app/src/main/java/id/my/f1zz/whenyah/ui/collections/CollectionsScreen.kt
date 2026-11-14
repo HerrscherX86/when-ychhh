@@ -6,6 +6,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -39,6 +41,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,6 +54,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -128,7 +132,7 @@ fun CollectionsScreen(
                             start = 20.dp,
                             end = 20.dp,
                             top = 8.dp,
-                            bottom = 96.dp,
+                            bottom = 140.dp,
                         ),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -209,6 +213,7 @@ fun CollectionsScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun CollectionsOverviewCard(
     collectionCount: Int,
@@ -246,19 +251,21 @@ private fun CollectionsOverviewCard(
                     text = strings.collectionsOverviewTitle,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.semantics { heading() },
                 )
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 CollectionMetric(
                     value = collectionCount.toString(),
                     label = strings.navCollections,
-                    modifier = Modifier.weight(1f),
                 )
                 CollectionMetric(
                     value = itemCount.toString(),
                     label = strings.organizedItemsLabel,
-                    modifier = Modifier.weight(1f),
                 )
             }
         }
@@ -347,12 +354,21 @@ private fun CollectionCard(
                 )
                 if (totals != null && totals.activeItemCount > 0) {
                     Text(
+                        text = strings.percentageFunded(
+                            (totals.overallProgress * 100).roundToInt()
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
                         text = strings.targetAndSaved(
                             target = formatIdr(totals.totalTargetIdr),
                             saved = formatIdr(totals.totalAvailableIdr),
                         ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                     )
                     LinearProgressIndicator(
                         progress = { animatedProgress },
@@ -418,6 +434,10 @@ private fun CollectionActionsMenu(
                 leadingIcon = {
                     Icon(imageVector = Icons.Outlined.Delete, contentDescription = null)
                 },
+                colors = MenuDefaults.itemColors(
+                    textColor = MaterialTheme.colorScheme.error,
+                    leadingIconColor = MaterialTheme.colorScheme.error,
+                ),
                 onClick = {
                     expanded = false
                     onDelete()
@@ -459,6 +479,7 @@ private fun CollectionsEmptyState(
                 text = strings.noCollectionsYet,
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center,
+                modifier = Modifier.semantics { heading() },
             )
             Text(
                 text = strings.noCollectionsMessage,

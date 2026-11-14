@@ -57,6 +57,8 @@ interface AppStrings {
     val overviewTab: String
     val itemsTab: String
     val nextUp: String
+    val details: String
+    val manageItem: String
 
     val totalSaved: String
     val archiveShort: String
@@ -244,6 +246,7 @@ interface AppStrings {
     val allowExactReminders: String
     val reminderReliabilityTitle: String
     val reminderReliabilityHelp: String
+    val remindersAndSummaries: String
     val exactAlarmsAllowed: String
     val exactAlarmsNotAllowed: String
     val batteryOptimizationAllowed: String
@@ -334,7 +337,6 @@ interface AppStrings {
 
     fun itemCount(count: Int): String
     fun transactionCount(count: Int): String
-    fun viewAllTransactions(count: Int): String
     fun targetAndSaved(target: String, saved: String): String
     fun targetLabel(value: String): String
     fun savedLabel(value: String): String

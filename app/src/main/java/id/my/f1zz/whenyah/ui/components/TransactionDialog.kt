@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -12,11 +14,20 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import id.my.f1zz.whenyah.domain.savings.TransactionType
 import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
+import id.my.f1zz.whenyah.ui.util.IdrAmountVisualTransformation
 import id.my.f1zz.whenyah.ui.util.formatIdr
 
 @Composable
@@ -34,6 +45,11 @@ fun TransactionDialog(
 ) {
     val strings = LocalAppStrings.current
     val isDeposit = type == TransactionType.DEPOSIT
+    val amountFocusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        runCatching { amountFocusRequester.requestFocus() }
+    }
 
     AlertDialog(
         onDismissRequest = {
@@ -43,23 +59,41 @@ fun TransactionDialog(
             Text(if (isDeposit) strings.addSavingsTitle else strings.withdrawSavingsTitle)
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (!isDeposit) {
-                    Text(
-                        text = strings.availableLabel(formatIdr(availableBalanceIdr)),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = strings.availableLabel(formatIdr(availableBalanceIdr)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 OutlinedTextField(
                     value = amount,
                     onValueChange = onAmountChange,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(amountFocusRequester),
                     label = { Text(strings.amountIdr) },
+                    prefix = { Text("Rp") },
+                    visualTransformation = IdrAmountVisualTransformation(),
                     singleLine = true,
                     enabled = !isSaving,
                     isError = error != null,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    supportingText = error?.let { message ->
+                        {
+                            Text(
+                                text = message,
+                                modifier = Modifier.semantics {
+                                    liveRegion = LiveRegionMode.Assertive
+                                },
+                            )
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Next,
+                    ),
                 )
                 OutlinedTextField(
                     value = note,
@@ -68,14 +102,8 @@ fun TransactionDialog(
                     label = { Text(strings.noteOptional) },
                     minLines = 2,
                     enabled = !isSaving,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 )
-                error?.let { message ->
-                    Text(
-                        text = message,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
             }
         },
         confirmButton = {

@@ -43,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -118,7 +119,7 @@ fun CollectionDetailScreen(
                             start = 20.dp,
                             end = 20.dp,
                             top = 8.dp,
-                            bottom = 96.dp,
+                            bottom = 140.dp,
                         ),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -217,6 +218,7 @@ private fun CollectionHeader(
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.semantics { heading() },
                     )
                     Text(
                         text = strings.itemCount(itemCount),
@@ -308,6 +310,7 @@ private fun CollectionItemsEmptyState(
             text = strings.noItemsInCollection,
             style = MaterialTheme.typography.titleLarge,
             textAlign = TextAlign.Center,
+            modifier = Modifier.semantics { heading() },
         )
         Text(
             text = strings.noItemsInCollectionMessage,

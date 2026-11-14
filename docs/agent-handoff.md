@@ -54,6 +54,16 @@ Implemented:
   activity, and a “Browse all items” button; Items has a pinned search + filter row, applied chips,
   and the list. Sort moved into the filter sheet, section headers use heading semantics, the hero
   metrics wrap with `FlowRow`, and both lists use a larger FAB bottom inset.
+- **Item detail hierarchy**: the savings card is now the `primaryContainer` hero; Edit/Delete live
+  in a header overflow menu; “Mark purchased” is a bottom “Manage item” tonal action; metadata is a
+  Details card with stacked rows. The transaction dialog now uses grouped IDR input + `Rp` prefix,
+  autofocus, shows the available balance for both directions, scrolls at large font, and announces
+  errors; delete confirms are error-colored.
+- **Collections & Settings polish**: collection overview metrics wrap; cards show a visible
+  percentage; delete menus are error-colored; FAB insets increased; headings added. Settings is
+  regrouped into Appearance, Widget, Language, Notifications, Reminders & summaries, Data, and About.
+  Switch rows are fully tappable with switch semantics; accent chips wrap; permission denial exposes
+  an app-settings CTA; restore confirms are error-colored; Archive is demoted to outlined.
 - **Predictive back**: `android:enableOnBackInvokedCallback="true"`; pop transitions remain fades.
 - **Dependencies**: Glance `1.2.0`, `glance-material3`, Compose Material3 Adaptive `1.3.0`.
   Glance pulls WorkManager transitively; reminders still use `AlarmManager`.

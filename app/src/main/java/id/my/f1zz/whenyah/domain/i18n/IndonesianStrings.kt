@@ -57,6 +57,8 @@ object IndonesianStrings : AppStrings {
     override val overviewTab = "Ringkasan"
     override val itemsTab = "Item"
     override val nextUp = "Berikutnya"
+    override val details = "Detail"
+    override val manageItem = "Atur item"
 
     override val totalSaved = "Total kekumpul"
     override val archiveShort = "Arsip"
@@ -244,6 +246,7 @@ object IndonesianStrings : AppStrings {
     override val allowExactReminders = "Izinkan alarm presisi"
     override val reminderReliabilityTitle = "Keandalan pengingat"
     override val reminderReliabilityHelp = "Android bisa nunda pengingat di background. Alarm presisi dan aktivitas background bantu."
+    override val remindersAndSummaries = "Pengingat & ringkasan"
     override val exactAlarmsAllowed = "Alarm presisi udah diizinin."
     override val exactAlarmsNotAllowed = "Alarm presisi belum diizinin. Pengingat bisa telat."
     override val batteryOptimizationAllowed = "Optimasi baterai nggak ngehambat When Yah."
@@ -343,8 +346,6 @@ object IndonesianStrings : AppStrings {
     override fun itemCount(count: Int): String = "$count item"
 
     override fun transactionCount(count: Int): String = "$count transaksi"
-
-    override fun viewAllTransactions(count: Int): String = "Lihat semua $count transaksi"
 
     override fun targetAndSaved(target: String, saved: String): String =
         "Target $target • Kekumpul $saved"

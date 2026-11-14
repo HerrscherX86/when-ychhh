@@ -2,12 +2,12 @@ package id.my.f1zz.whenyah.ui.settings
 
 import android.Manifest
 import android.app.TimePickerDialog
+import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,8 +23,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Archive
@@ -33,10 +33,12 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.Upload
+import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -58,8 +60,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -105,9 +112,16 @@ fun SettingsScreen(
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
         }.getOrNull().orEmpty().ifBlank { "?" }
     }
+    var permissionDenied by rememberSaveable { mutableStateOf(false) }
+    var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refreshReminderReliability()
+        permissionDenied = settings.notificationsEnabled && !hasNotificationPermission(context)
+    }
+
+    LaunchedEffect(settings.notificationsEnabled) {
+        permissionDenied = settings.notificationsEnabled && !hasNotificationPermission(context)
     }
 
     LaunchedEffect(backupState.message) {
@@ -117,8 +131,6 @@ fun SettingsScreen(
     LaunchedEffect(backupState.error) {
         backupState.error?.let(feedback::error)
     }
-    var permissionDenied by rememberSaveable { mutableStateOf(false) }
-    var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
 
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/zip"),
@@ -150,11 +162,7 @@ fun SettingsScreen(
             return
         }
 
-        val needsPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS,
-            ) != PackageManager.PERMISSION_GRANTED
+        val needsPermission = !hasNotificationPermission(context)
 
         if (needsPermission) {
             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -208,11 +216,9 @@ fun SettingsScreen(
                     text = strings.accentColor,
                     style = MaterialTheme.typography.labelLarge,
                 )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     AccentColor.entries.forEach { accent ->
                         FilterChip(
@@ -240,12 +246,11 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+            }
+        }
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                Text(
-                    text = strings.widgetSectionTitle,
-                    style = MaterialTheme.typography.labelLarge,
-                )
+        item {
+            SettingsSection(icon = Icons.Outlined.Widgets, title = strings.widgetSectionTitle) {
                 Text(
                     text = strings.widgetSectionDescription,
                     style = MaterialTheme.typography.bodySmall,
@@ -323,92 +328,11 @@ fun SettingsScreen(
                     checked = settings.notificationsEnabled,
                     onCheckedChange = ::onNotificationsToggle,
                 )
-
-                if (settings.notificationsEnabled) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = strings.reminderReliabilityTitle,
-                            style = MaterialTheme.typography.labelLarge,
-                        )
-                        Text(
-                            text = strings.reminderReliabilityHelp,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-
-                        Text(
-                            text = if (exactAlarmsAllowed) {
-                                strings.exactAlarmsAllowed
-                            } else {
-                                strings.exactAlarmsNotAllowed
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (exactAlarmsAllowed) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.error
-                            },
-                        )
-                        if (!exactAlarmsAllowed) {
-                            OutlinedButton(
-                                onClick = viewModel::openExactAlarmSettings,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(min = 48.dp),
-                                shape = RoundedCornerShape(18.dp),
-                            ) {
-                                Text(strings.allowExactReminders)
-                            }
-                        }
-
-                        Text(
-                            text = if (batteryOptimizationIgnored) {
-                                strings.batteryOptimizationAllowed
-                            } else {
-                                strings.batteryOptimizationRestricted
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (batteryOptimizationIgnored) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.error
-                            },
-                        )
-                        if (!batteryOptimizationIgnored) {
-                            OutlinedButton(
-                                onClick = viewModel::openBatteryOptimizationSettings,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(min = 48.dp),
-                                shape = RoundedCornerShape(18.dp),
-                            ) {
-                                Text(strings.openBatterySettings)
-                            }
-                        }
-
-                        OutlinedButton(
-                            onClick = {
-                                val sent = viewModel.sendTestNotification()
-                                if (sent) {
-                                    feedback.success(strings.testNotificationSent)
-                                } else {
-                                    feedback.error(strings.permissionDenied)
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(min = 48.dp),
-                            shape = RoundedCornerShape(18.dp),
-                        ) {
-                            Text(strings.sendTestNotification)
-                        }
-
-                        TextButton(onClick = { showOemHelp = true }) {
-                            Text(strings.oemHelpTitle)
-                        }
+                if (permissionDenied) {
+                    TextButton(onClick = viewModel::openAppSettings) {
+                        Text(strings.openAppSettings)
                     }
                 }
-
                 SettingSwitchRow(
                     title = strings.goalNotifications,
                     supportingText = strings.goalNotificationsHelp,
@@ -416,12 +340,103 @@ fun SettingsScreen(
                     enabled = settings.notificationsEnabled,
                     onCheckedChange = viewModel::setGoalNotificationsEnabled,
                 )
+            }
+        }
 
+        item {
+            SettingsSection(icon = Icons.Outlined.Schedule, title = strings.remindersAndSummaries) {
                 Text(
                     text = strings.contributionReminderHelp,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = strings.reminderReliabilityTitle,
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                    Text(
+                        text = strings.reminderReliabilityHelp,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    Text(
+                        text = if (exactAlarmsAllowed) {
+                            strings.exactAlarmsAllowed
+                        } else {
+                            strings.exactAlarmsNotAllowed
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (exactAlarmsAllowed) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.error
+                        },
+                    )
+                    if (!exactAlarmsAllowed) {
+                        OutlinedButton(
+                            onClick = viewModel::openExactAlarmSettings,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 48.dp),
+                            shape = RoundedCornerShape(18.dp),
+                        ) {
+                            Text(strings.allowExactReminders)
+                        }
+                    }
+
+                    Text(
+                        text = if (batteryOptimizationIgnored) {
+                            strings.batteryOptimizationAllowed
+                        } else {
+                            strings.batteryOptimizationRestricted
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (batteryOptimizationIgnored) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.error
+                        },
+                    )
+                    if (!batteryOptimizationIgnored) {
+                        OutlinedButton(
+                            onClick = viewModel::openBatteryOptimizationSettings,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 48.dp),
+                            shape = RoundedCornerShape(18.dp),
+                        ) {
+                            Text(strings.openBatterySettings)
+                        }
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            val sent = viewModel.sendTestNotification()
+                            if (sent) {
+                                feedback.success(strings.testNotificationSent)
+                            } else {
+                                feedback.error(strings.permissionDenied)
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp),
+                        shape = RoundedCornerShape(18.dp),
+                    ) {
+                        Text(strings.sendTestNotification)
+                    }
+
+                    TextButton(onClick = { showOemHelp = true }) {
+                        Text(strings.oemHelpTitle)
+                    }
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                 Text(
                     text = strings.progressSummary,
@@ -473,7 +488,7 @@ fun SettingsScreen(
 
         item {
             SettingsSection(icon = Icons.Outlined.Storage, title = strings.data) {
-                Button(
+                OutlinedButton(
                     onClick = onOpenArchive,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -629,6 +644,9 @@ fun SettingsScreen(
                         pendingRestoreUri = null
                         backupViewModel.restore(uri)
                     },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error,
+                    ),
                 ) {
                     Text(strings.restore)
                 }
@@ -718,6 +736,7 @@ private fun SettingsSection(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.semantics { heading() },
                 )
             }
             content()
@@ -737,11 +756,21 @@ private fun SettingSwitchRow(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
+            .toggleable(
+                value = checked,
+                enabled = enabled,
+                role = Role.Switch,
+                onValueChange = onCheckedChange,
+            )
             .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .alpha(if (enabled) 1f else 0.6f),
+        ) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
@@ -754,8 +783,16 @@ private fun SettingSwitchRow(
         }
         Switch(
             checked = checked,
-            onCheckedChange = onCheckedChange,
+            onCheckedChange = null,
+            modifier = Modifier.clearAndSetSemantics { },
             enabled = enabled,
         )
     }
 }
+
+private fun hasNotificationPermission(context: Context): Boolean =
+    Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+        ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS,
+        ) == PackageManager.PERMISSION_GRANTED

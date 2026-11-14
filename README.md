@@ -65,8 +65,9 @@
 ### Wishlist dan koleksi
 - Tambah barang dengan nama, harga target, gambar lokal, URL pembelian, catatan, dan kategori.
 - Kelompokkan barang ke koleksi buatan sendiri. Satu barang maksimal masuk ke satu koleksi.
+- Kartu koleksi menampilkan jumlah item, total target/tersimpan, dan persentase progres.
 - Cari dan urutkan barang di Home.
-- Halaman detail barang dengan progres tabungan, rencana, dan riwayat transaksi.
+- Halaman detail barang dengan kartu tabungan utama (nabung/tarik/quick save), menu edit/hapus, detail barang, dan riwayat transaksi.
 
 ### Tabungan per barang
 - Catat setoran dan penarikan manual per barang.
@@ -93,7 +94,7 @@
 - Siap dibeli: daftar barang yang tabungannya sudah mencapai target.
 - Ketuk widget untuk membuka app; ketuk target/barang untuk langsung ke detailnya.
 - Widget ikut diperbarui setelah setoran, penarikan, pembelian, restore, dan perubahan bahasa.
-- Bisa ditambahkan dari Settings → Tampilan, atau dari pemilih widget launcher.
+- Bisa ditambahkan dari Settings → Widget, atau dari pemilih widget launcher.
 
 ### Aksi cepat dari notifikasi
 - Notifikasi reminder rencana punya tombol **Tambah tabungan**.

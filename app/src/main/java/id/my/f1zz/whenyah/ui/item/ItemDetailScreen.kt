@@ -17,17 +17,27 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -41,7 +51,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
@@ -85,6 +98,7 @@ fun ItemDetailScreen(
     val feedback = LocalAppFeedback.current
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
     var showPurchaseDialog by rememberSaveable { mutableStateOf(false) }
+    var showItemMenu by remember { mutableStateOf(false) }
     var urlError by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val item = state.item
@@ -154,10 +168,56 @@ fun ItemDetailScreen(
                         .fillMaxWidth()
                         .height(220.dp),
                 )
-                Text(
-                    text = item.name,
-                    style = MaterialTheme.typography.headlineMedium,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = item.name,
+                        style = MaterialTheme.typography.headlineMedium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Box {
+                        IconButton(onClick = { showItemMenu = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = strings.moreActions,
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showItemMenu,
+                            onDismissRequest = { showItemMenu = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(strings.edit) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Edit,
+                                        contentDescription = null,
+                                    )
+                                },
+                                onClick = {
+                                    showItemMenu = false
+                                    onEdit()
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(strings.delete) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Delete,
+                                        contentDescription = null,
+                                    )
+                                },
+                                colors = MenuDefaults.itemColors(
+                                    textColor = MaterialTheme.colorScheme.error,
+                                    leadingIconColor = MaterialTheme.colorScheme.error,
+                                ),
+                                onClick = {
+                                    showItemMenu = false
+                                    showDeleteDialog = true
+                                },
+                            )
+                        }
+                    }
+                }
                 Text(
                     text = formatIdr(item.targetPriceIdr),
                     style = MaterialTheme.typography.headlineSmall,
@@ -188,60 +248,59 @@ fun ItemDetailScreen(
                     onEditPlan = onEditPlan,
                 )
 
-                Button(
-                    onClick = {
-                        viewModel.clearPurchaseError()
-                        showPurchaseDialog = true
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(strings.markPurchased)
-                }
-
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Button(onClick = onEdit, modifier = Modifier.weight(1f)) {
-                        Text(strings.edit)
-                    }
-                    OutlinedButton(
-                        onClick = { showDeleteDialog = true },
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text(strings.delete)
-                    }
-                }
                 HorizontalDivider()
-                DetailRow(
-                    label = strings.collectionLabel,
-                    value = state.collectionName ?: strings.none,
+                Text(
+                    text = strings.details,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.semantics { heading() },
                 )
-                DetailRow(
-                    label = strings.categoryLabel,
-                    value = item.category ?: strings.none,
-                )
-                DetailRow(
-                    label = strings.addedLabel,
-                    value = formatDateTime(item.createdAt, strings.locale),
-                )
-                DetailRow(
-                    label = strings.updatedLabel,
-                    value = formatDateTime(item.updatedAt, strings.locale),
-                )
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        DetailRow(
+                            label = strings.collectionLabel,
+                            value = state.collectionName ?: strings.none,
+                        )
+                        DetailRow(
+                            label = strings.categoryLabel,
+                            value = item.category ?: strings.none,
+                        )
+                        DetailRow(
+                            label = strings.addedLabel,
+                            value = formatDateTime(item.createdAt, strings.locale),
+                        )
+                        DetailRow(
+                            label = strings.updatedLabel,
+                            value = formatDateTime(item.updatedAt, strings.locale),
+                        )
 
-                if (!item.notes.isNullOrBlank()) {
-                    Text(
-                        text = strings.notesLabel,
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    Text(
-                        text = item.notes,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
+                        if (!item.notes.isNullOrBlank()) {
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    text = strings.notesLabel,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Text(
+                                    text = item.notes,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
+                        }
+                    }
                 }
 
                 val purchaseUrl = item.purchaseUrl
                 if (!purchaseUrl.isNullOrBlank()) {
                     OutlinedButton(
                         onClick = {
+                            urlError = null
                             if (ItemValidation.isValidPurchaseUrl(purchaseUrl)) {
                                 runCatching {
                                     context.startActivity(
@@ -254,6 +313,7 @@ fun ItemDetailScreen(
                                 urlError = strings.invalidPurchaseLink
                             }
                         },
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
@@ -268,14 +328,29 @@ fun ItemDetailScreen(
                         text = message,
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.semantics {
+                            liveRegion = LiveRegionMode.Assertive
+                        },
                     )
                 }
 
                 HorizontalDivider()
-                Text(
-                    text = strings.recentActivity,
-                    style = MaterialTheme.typography.titleMedium,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = strings.recentActivity,
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.semantics { heading() },
+                    )
+                    if (state.events.isNotEmpty()) {
+                        TextButton(onClick = onViewHistory) {
+                            Text(strings.viewAll)
+                        }
+                    }
+                }
                 if (state.events.isEmpty()) {
                     Text(
                         text = strings.noSavingsActivityYet,
@@ -286,9 +361,24 @@ fun ItemDetailScreen(
                     state.events.take(5).forEach { event ->
                         SavingsEventRow(event = event)
                     }
-                    TextButton(onClick = onViewHistory) {
-                        Text(strings.viewAllTransactions(state.events.size))
-                    }
+                }
+
+                HorizontalDivider()
+                Text(
+                    text = strings.manageItem,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.semantics { heading() },
+                )
+                FilledTonalButton(
+                    onClick = {
+                        viewModel.clearPurchaseError()
+                        showPurchaseDialog = true
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp),
+                ) {
+                    Text(strings.markPurchased)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -364,7 +454,14 @@ private fun SavingsCard(
         ),
         label = "itemDetailProgress",
     )
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -372,18 +469,20 @@ private fun SavingsCard(
             Text(
                 text = strings.savings,
                 style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.semantics { heading() },
             )
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     text = formatIdr(availableIdr),
                     style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = strings.ofTarget(formatIdr(targetIdr)),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.72f),
                 )
             }
             LinearProgressIndicator(
@@ -400,6 +499,8 @@ private fun SavingsCard(
                             )
                         }
                     },
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.18f),
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -412,6 +513,7 @@ private fun SavingsCard(
                         strings.percentageFunded((progress * 100).roundToInt())
                     },
                     style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
                 Text(
                     text = if (isGoalReached) {
@@ -420,14 +522,14 @@ private fun SavingsCard(
                         strings.remainingLabel(formatIdr(remainingIdr))
                     },
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.72f),
                 )
             }
             if (surplusIdr > 0) {
                 Text(
                     text = strings.aboveTarget(formatIdr(surplusIdr)),
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.tertiary,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
             FlowRow(
@@ -445,6 +547,9 @@ private fun SavingsCard(
                     onClick = onWithdraw,
                     modifier = Modifier.heightIn(min = 48.dp),
                     enabled = availableIdr > 0,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    ),
                 ) {
                     Text(strings.withdraw)
                 }
@@ -468,7 +573,11 @@ private fun PlanCard(
     onEditPlan: () -> Unit,
 ) {
     val strings = LocalAppStrings.current
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -476,6 +585,7 @@ private fun PlanCard(
             Text(
                 text = strings.savingsPlan,
                 style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.semantics { heading() },
             )
 
             if (plan == null) {
@@ -582,16 +692,14 @@ private fun PlanCard(
 
 @Composable
 private fun DetailRow(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth()) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
             text = label,
-            modifier = Modifier.width(96.dp),
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             text = value,
-            modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.bodyMedium,
         )
     }

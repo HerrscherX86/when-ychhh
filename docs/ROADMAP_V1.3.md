@@ -148,6 +148,43 @@ Acceptance:
 
 ---
 
+## Workstream 3c — Item detail hierarchy
+
+- [x] Savings card uses `primaryContainer` and leads the page; Add/Withdraw/Quick save stay inside it.
+- [x] Edit/Delete move into a header overflow menu; Delete is error-colored.
+- [x] “Mark purchased” moves to a bottom “Manage item” tonal action instead of the loudest button.
+- [x] Metadata moves into a Details card; `DetailRow` stacks label/value for large fonts.
+- [x] Transaction dialog uses grouped IDR input + `Rp` prefix, autofocus, available balance for both directions, scrollable content, and live-region errors.
+- [x] Mark purchased/delete dialogs use live-region errors and an error-colored destructive confirm.
+- [x] Section headings use heading semantics.
+
+Acceptance:
+
+- The daily savings action is visually primary; the terminal purchase action is secondary and below the fold.
+- Management actions are discoverable from the header menu.
+- IDR entry looks the same in the transaction dialog and the editors.
+- Large-font dialogs and detail rows do not clip.
+
+---
+
+## Workstream 3d — Collections and Settings polish
+
+- [x] Collection overview metrics wrap; cards show a visible progress percentage; delete menu items are error-colored; FAB inset increased; headings added.
+- [x] Settings split into Appearance, Widget, Language, Notifications, Reminders & summaries, Data, and About.
+- [x] `SettingSwitchRow` is a whole-row toggle with switch semantics; accent chips wrap instead of scrolling horizontally.
+- [x] Permission denial exposes an “Open app settings” action and syncs when returning from system settings.
+- [x] Restore confirmation uses the error color; Archive is demoted to an outlined action.
+- [x] Settings section titles use heading semantics.
+
+Acceptance:
+
+- Collection progress is understandable from text, not only the bar.
+- Settings sections scan as separate topics; switches have a full-row tap target and correct screen-reader role.
+- The permission and restore paths are obvious without guessing.
+- Large-font layouts do not hide accent options or clip section titles.
+
+---
+
 ## Workstream 4 — Predictive back
 
 - [x] `android:enableOnBackInvokedCallback="true"` in the manifest.
