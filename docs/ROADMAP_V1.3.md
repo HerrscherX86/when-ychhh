@@ -129,6 +129,25 @@ Out of scope: two-pane list-detail layouts (recommended for a later release).
 
 ---
 
+## Workstream 3b — Home hierarchy
+
+- [x] Pinned `Overview | Items` segmented switch.
+- [x] Overview trimmed to hero, one “Next up” card, ready-to-buy row, recent activity, and a
+      “Browse all items” button.
+- [x] Items gets a pinned search + filter row, applied-filter chips, and the full list.
+- [x] Sort moved into the filter sheet; section headers use heading semantics; hero metrics wrap
+      with `FlowRow`.
+- [x] Larger bottom content inset so the FAB does not cover the last card.
+
+Acceptance:
+
+- Search and filters are one tap away on Home.
+- Overview fits roughly one screen before the “Browse all items” action.
+- The selected tab and per-tab scroll positions survive tab switches.
+- No duplicate Lazy keys across Overview/Items.
+
+---
+
 ## Workstream 4 — Predictive back
 
 - [x] `android:enableOnBackInvokedCallback="true"` in the manifest.

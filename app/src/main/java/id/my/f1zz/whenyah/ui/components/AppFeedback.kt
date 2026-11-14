@@ -8,7 +8,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
- * App-wide transient feedback. The snackbar host lives in [WhenYahApp], so
+ * App-wide transient feedback. The snackbar host lives in [id.my.f1zz.whenyah.ui.WhenYahApp], so
  * messages survive navigation between screens and dialogs.
  */
 class AppFeedback(

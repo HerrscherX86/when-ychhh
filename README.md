@@ -81,9 +81,10 @@
 - Recurrence bulanan tetap memakai tanggal awal dan otomatis menyesuaikan akhir bulan.
 
 ### Dashboard
-- Ringkasan total target, total tersimpan, dan jumlah barang yang sudah tercapai.
-- Aktivitas terbaru, rencana terdekat, dan barang yang paling dekat dengan target.
-- Daftar semua barang aktif dengan pencarian dan filter.
+- Home punya dua tab: **Ringkasan** buat dashboard dan **Item** buat cari/filter semua barang.
+- Ringkasan menampilkan total target, total tersimpan, berikutnya, barang yang siap dibeli, dan aktivitas terbaru.
+- Tab Item punya pencarian dan filter yang selalu kelihatan di atas daftar.
+- Daftar semua barang aktif dengan pencarian dan filter; urutan diatur dari sheet filter.
 
 ### Widget layar utama
 - Tiga pilihan widget: **Ringkasan**, **Target terdekat**, dan **Siap dibeli**.

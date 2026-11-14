@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -38,6 +39,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -47,20 +49,26 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -100,209 +108,66 @@ fun HomeScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val strings = LocalAppStrings.current
-    val listState = rememberLazyListState()
-    val fabVisible by rememberFabVisibility(listState)
+    var selectedTab by rememberSaveable { mutableStateOf(HomeTab.OVERVIEW) }
+    val overviewListState = rememberLazyListState()
+    val itemsListState = rememberLazyListState()
+    val overviewFabVisible by rememberFabVisibility(overviewListState)
+    val itemsFabVisible by rememberFabVisibility(itemsListState)
     var searchFocused by remember { mutableStateOf(false) }
     var showFilters by remember { mutableStateOf(false) }
+    val fabVisible = when (selectedTab) {
+        HomeTab.OVERVIEW -> overviewFabVisible
+        HomeTab.ITEMS -> itemsFabVisible
+    }
 
     Box(modifier = modifier.fillMaxSize()) {
         AdaptiveContent(maxWidth = 960.dp) {
-        if (state.isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        } else {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    start = 20.dp,
-                    end = 20.dp,
-                    top = 8.dp,
-                    bottom = 112.dp,
-                ),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                item {
-                    OverviewCard(
-                        summary = state.summary,
+            Column(modifier = Modifier.fillMaxSize()) {
+                HomeTabSwitcher(
+                    selectedTab = selectedTab,
+                    strings = strings,
+                    onSelect = { tab ->
+                        selectedTab = tab
+                        if (tab == HomeTab.OVERVIEW) {
+                            searchFocused = false
+                        }
+                    },
+                )
+
+                when (selectedTab) {
+                    HomeTab.OVERVIEW -> OverviewTab(
+                        state = state,
+                        strings = strings,
+                        listState = overviewListState,
+                        onAddItem = onAddItem,
+                        onItemClick = onItemClick,
+                        onPlanClick = onPlanClick,
+                        onViewAllActivity = onViewAllActivity,
                         onOpenArchive = onOpenArchive,
+                        onBrowseAllItems = { selectedTab = HomeTab.ITEMS },
                     )
-                }
 
-                if (state.recentActivity.isNotEmpty()) {
-                    item {
-                        SectionHeader(
-                            title = strings.recentActivity,
-                            action = {
-                                TextButton(onClick = onViewAllActivity) {
-                                    Text(strings.viewAll)
-                                }
-                            },
-                        )
-                    }
-                    item {
-                        RecentActivityCard(activities = state.recentActivity)
-                    }
-                }
-
-                if (state.upcomingPlans.isNotEmpty()) {
-                    item { SectionHeader(title = strings.upcomingPlans) }
-                    items(
-                        items = state.upcomingPlans,
-                        key = { "plan-${it.plan.id}" },
-                    ) { upcoming ->
-                        UpcomingPlanCard(
-                            upcoming = upcoming,
-                            onClick = { onPlanClick(upcoming.plan.itemId) },
-                            modifier = Modifier.animateItem(),
-                        )
-                    }
-                }
-
-                if (state.nearestGoals.isNotEmpty()) {
-                    item { SectionHeader(title = strings.closestGoals) }
-                    item {
-                        NearestGoalsRow(
-                            goals = state.nearestGoals,
-                            onItemClick = onItemClick,
-                        )
-                    }
-                }
-
-                if (state.readyToBuy.isNotEmpty()) {
-                    item { SectionHeader(title = strings.readyToBuy) }
-                    item {
-                        ReadyToBuyRow(
-                            goals = state.readyToBuy,
-                            onItemClick = onItemClick,
-                        )
-                    }
-                }
-
-                item {
-                    SectionHeader(
-                        title = strings.allItems,
-                        action = { CountBadge(state.items.size) },
+                    HomeTab.ITEMS -> ItemsTab(
+                        state = state,
+                        strings = strings,
+                        listState = itemsListState,
+                        onQueryChange = viewModel::onQueryChange,
+                        onSearchFocusChanged = { searchFocused = it },
+                        onFilterClick = { showFilters = true },
+                        onAddItem = onAddItem,
+                        onItemClick = onItemClick,
+                        onClearCollection = { viewModel.onCollectionFilterChange(null) },
+                        onClearCategory = { viewModel.onCategoryFilterChange(null) },
+                        onClearGoal = { viewModel.onGoalFilterChange(GoalFilter.ALL) },
+                        onClearPlan = { viewModel.onPlanFilterChange(PlanFilter.ALL) },
+                        onClearAll = viewModel::clearFilters,
                     )
-                }
-
-                item {
-                    OutlinedTextField(
-                        value = state.queryText,
-                        onValueChange = viewModel::onQueryChange,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .onFocusChanged { searchFocused = it.isFocused },
-                        placeholder = { Text(strings.searchItems) },
-                        leadingIcon = {
-                            Icon(imageVector = Icons.Outlined.Search, contentDescription = null)
-                        },
-                        singleLine = true,
-                        shape = RoundedCornerShape(20.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                        ),
-                    )
-                }
-
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            itemVerticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            SortChip(
-                                selected = state.sort == ItemSortOrder.RECENT,
-                                label = strings.sortRecent,
-                                onClick = { viewModel.onSortChange(ItemSortOrder.RECENT) },
-                            )
-                            SortChip(
-                                selected = state.sort == ItemSortOrder.NAME,
-                                label = strings.sortName,
-                                onClick = { viewModel.onSortChange(ItemSortOrder.NAME) },
-                            )
-                            SortChip(
-                                selected = state.sort == ItemSortOrder.PROGRESS,
-                                label = strings.sortProgress,
-                                onClick = { viewModel.onSortChange(ItemSortOrder.PROGRESS) },
-                            )
-                            SortChip(
-                                selected = state.sort == ItemSortOrder.TARGET_PRICE,
-                                label = strings.sortPrice,
-                                onClick = { viewModel.onSortChange(ItemSortOrder.TARGET_PRICE) },
-                            )
-                        }
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            OutlinedButton(
-                                onClick = { showFilters = true },
-                                shape = RoundedCornerShape(20.dp),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.FilterList,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp),
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(strings.filterAction)
-                            }
-                            if (state.isFiltering) {
-                                TextButton(onClick = viewModel::clearFilters) {
-                                    Text(strings.filterClearAll)
-                                }
-                            }
-                        }
-                        if (state.isFiltering) {
-                            AppliedFilterChips(
-                                state = state,
-                                strings = strings,
-                                onClearCollection = { viewModel.onCollectionFilterChange(null) },
-                                onClearCategory = { viewModel.onCategoryFilterChange(null) },
-                                onClearGoal = { viewModel.onGoalFilterChange(GoalFilter.ALL) },
-                                onClearPlan = { viewModel.onPlanFilterChange(PlanFilter.ALL) },
-                            )
-                        }
-                    }
-                }
-
-                if (state.items.isEmpty()) {
-                    item {
-                        EmptyState(
-                            title = when {
-                                state.isFiltering -> strings.noFilteredItems
-                                state.queryText.isNotBlank() -> strings.noMatchingItems
-                                else -> strings.noItemsYet
-                            },
-                            message = when {
-                                state.isFiltering -> strings.noFilteredItemsMessage
-                                state.queryText.isNotBlank() -> strings.noMatchingMessage
-                                else -> strings.noItemsMessage
-                            },
-                        )
-                    }
-                } else {
-                    items(items = state.items, key = { "item-${it.item.id}" }) { entry ->
-                        ItemCard(
-                            item = entry.item,
-                            savings = entry.savings,
-                            collectionName = state.collectionNames[entry.item.collectionId],
-                            onClick = { onItemClick(entry.item.id) },
-                            modifier = Modifier.animateItem(),
-                        )
-                    }
                 }
             }
-        }
-
         }
 
         ScrollAwareAddFab(
-            visible = fabVisible && !searchFocused,
+            visible = fabVisible && !(selectedTab == HomeTab.ITEMS && searchFocused),
             onClick = onAddItem,
             contentDescription = strings.addItemDescription,
             modifier = Modifier.align(Alignment.BottomEnd),
@@ -313,6 +178,7 @@ fun HomeScreen(
         HomeFilterSheet(
             state = state,
             onDismiss = { showFilters = false },
+            onSortChange = viewModel::onSortChange,
             onCollectionChange = viewModel::onCollectionFilterChange,
             onCategoryChange = viewModel::onCategoryFilterChange,
             onGoalChange = viewModel::onGoalFilterChange,
@@ -322,17 +188,309 @@ fun HomeScreen(
     }
 }
 
+private enum class HomeTab {
+    OVERVIEW,
+    ITEMS,
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SortChip(
-    selected: Boolean,
-    label: String,
-    onClick: () -> Unit,
+private fun HomeTabSwitcher(
+    selectedTab: HomeTab,
+    strings: AppStrings,
+    onSelect: (HomeTab) -> Unit,
 ) {
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = { Text(label) },
-    )
+    SingleChoiceSegmentedButtonRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 4.dp),
+    ) {
+        HomeTab.entries.forEachIndexed { index, tab ->
+            SegmentedButton(
+                selected = selectedTab == tab,
+                onClick = { onSelect(tab) },
+                shape = SegmentedButtonDefaults.itemShape(
+                    index = index,
+                    count = HomeTab.entries.size,
+                ),
+                modifier = Modifier.weight(1f),
+            ) {
+                Text(
+                    text = when (tab) {
+                        HomeTab.OVERVIEW -> strings.overviewTab
+                        HomeTab.ITEMS -> strings.itemsTab
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun OverviewTab(
+    state: HomeUiState,
+    strings: AppStrings,
+    listState: LazyListState,
+    onAddItem: () -> Unit,
+    onItemClick: (UUID) -> Unit,
+    onPlanClick: (UUID) -> Unit,
+    onViewAllActivity: () -> Unit,
+    onOpenArchive: () -> Unit,
+    onBrowseAllItems: () -> Unit,
+) {
+    if (state.isLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            start = 20.dp,
+            end = 20.dp,
+            top = 8.dp,
+            bottom = 140.dp,
+        ),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        if (state.items.isEmpty()) {
+            item {
+                EmptyState(
+                    title = strings.noItemsYet,
+                    message = strings.noItemsMessage,
+                )
+            }
+            item {
+                OutlinedButton(
+                    onClick = onAddItem,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp),
+                    shape = RoundedCornerShape(20.dp),
+                ) {
+                    Text(strings.addItem)
+                }
+            }
+        } else {
+            item {
+                OverviewCard(
+                    summary = state.summary,
+                    onOpenArchive = onOpenArchive,
+                )
+            }
+
+            val nextPlan = state.upcomingPlans.firstOrNull()
+            val nextGoal = state.nearestGoals.firstOrNull()
+            if (nextPlan != null) {
+                item { SectionHeader(title = strings.nextUp) }
+                item {
+                    UpcomingPlanCard(
+                        upcoming = nextPlan,
+                        onClick = { onPlanClick(nextPlan.plan.itemId) },
+                    )
+                }
+            } else if (nextGoal != null) {
+                item { SectionHeader(title = strings.nextUp) }
+                item {
+                    ItemCard(
+                        item = nextGoal.item,
+                        savings = nextGoal.savings,
+                        collectionName = state.collectionNames[nextGoal.item.collectionId],
+                        onClick = { onItemClick(nextGoal.item.id) },
+                    )
+                }
+            }
+
+            if (state.readyToBuy.isNotEmpty()) {
+                item { SectionHeader(title = strings.readyToBuy) }
+                item {
+                    ReadyToBuyRow(
+                        goals = state.readyToBuy,
+                        onItemClick = onItemClick,
+                    )
+                }
+            }
+
+            if (state.recentActivity.isNotEmpty()) {
+                item {
+                    SectionHeader(
+                        title = strings.recentActivity,
+                        action = {
+                            TextButton(onClick = onViewAllActivity) {
+                                Text(strings.viewAll)
+                            }
+                        },
+                    )
+                }
+                item {
+                    RecentActivityCard(activities = state.recentActivity)
+                }
+            }
+
+            item {
+                OutlinedButton(
+                    onClick = onBrowseAllItems,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp),
+                    shape = RoundedCornerShape(20.dp),
+                ) {
+                    Text(strings.allItems)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ItemsTab(
+    state: HomeUiState,
+    strings: AppStrings,
+    listState: LazyListState,
+    onQueryChange: (String) -> Unit,
+    onSearchFocusChanged: (Boolean) -> Unit,
+    onFilterClick: () -> Unit,
+    onAddItem: () -> Unit,
+    onItemClick: (UUID) -> Unit,
+    onClearCollection: () -> Unit,
+    onClearCategory: () -> Unit,
+    onClearGoal: () -> Unit,
+    onClearPlan: () -> Unit,
+    onClearAll: () -> Unit,
+) {
+    if (state.isLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    LaunchedEffect(
+        state.queryText,
+        state.sort,
+        state.collectionId,
+        state.category,
+        state.goal,
+        state.plan,
+    ) {
+        if (listState.firstVisibleItemIndex > 0) {
+            listState.animateScrollToItem(0)
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            OutlinedTextField(
+                value = state.queryText,
+                onValueChange = onQueryChange,
+                modifier = Modifier
+                    .weight(1f)
+                    .onFocusChanged { onSearchFocusChanged(it.isFocused) },
+                placeholder = { Text(strings.searchItems) },
+                leadingIcon = {
+                    Icon(imageVector = Icons.Outlined.Search, contentDescription = null)
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(20.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                ),
+            )
+            FilledTonalIconButton(onClick = onFilterClick) {
+                Icon(
+                    imageVector = Icons.Outlined.FilterList,
+                    contentDescription = strings.filterAction,
+                )
+            }
+        }
+
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = 20.dp,
+                end = 20.dp,
+                top = 4.dp,
+                bottom = 140.dp,
+            ),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            item {
+                SectionHeader(
+                    title = strings.allItems,
+                    action = { CountBadge(state.items.size) },
+                )
+            }
+
+            if (state.isFiltering) {
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        AppliedFilterChips(
+                            state = state,
+                            strings = strings,
+                            onClearCollection = onClearCollection,
+                            onClearCategory = onClearCategory,
+                            onClearGoal = onClearGoal,
+                            onClearPlan = onClearPlan,
+                        )
+                        TextButton(onClick = onClearAll) {
+                            Text(strings.filterClearAll)
+                        }
+                    }
+                }
+            }
+
+            if (state.items.isEmpty()) {
+                item {
+                    EmptyState(
+                        title = when {
+                            state.isFiltering -> strings.noFilteredItems
+                            state.queryText.isNotBlank() -> strings.noMatchingItems
+                            else -> strings.noItemsYet
+                        },
+                        message = when {
+                            state.isFiltering -> strings.noFilteredItemsMessage
+                            state.queryText.isNotBlank() -> strings.noMatchingMessage
+                            else -> strings.noItemsMessage
+                        },
+                    )
+                }
+                if (!state.isFiltering && state.queryText.isBlank()) {
+                    item {
+                        OutlinedButton(
+                            onClick = onAddItem,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 48.dp),
+                            shape = RoundedCornerShape(20.dp),
+                        ) {
+                            Text(strings.addItem)
+                        }
+                    }
+                }
+            } else {
+                items(items = state.items, key = { "item-${it.item.id}" }) { entry ->
+                    ItemCard(
+                        item = entry.item,
+                        savings = entry.savings,
+                        collectionName = state.collectionNames[entry.item.collectionId],
+                        onClick = { onItemClick(entry.item.id) },
+                        modifier = Modifier.animateItem(),
+                    )
+                }
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -413,6 +571,7 @@ private fun RemovableFilterChip(
 private fun HomeFilterSheet(
     state: HomeUiState,
     onDismiss: () -> Unit,
+    onSortChange: (ItemSortOrder) -> Unit,
     onCollectionChange: (UUID?) -> Unit,
     onCategoryChange: (String?) -> Unit,
     onGoalChange: (GoalFilter) -> Unit,
@@ -436,6 +595,16 @@ private fun HomeFilterSheet(
                 text = strings.filtersTitle,
                 style = MaterialTheme.typography.headlineSmall,
             )
+
+            FilterGroup(title = strings.sortBy) {
+                ItemSortOrder.entries.forEach { sort ->
+                    FilterChip(
+                        selected = state.sort == sort,
+                        onClick = { onSortChange(sort) },
+                        label = { Text(sortLabel(sort, strings)) },
+                    )
+                }
+            }
 
             FilterGroup(title = strings.filterStatus) {
                 FilterChip(
@@ -659,24 +828,22 @@ private fun OverviewCard(
                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.16f),
             )
 
-            Row(
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 OverviewMetric(
                     label = strings.activeItems,
                     value = summary.activeItemCount.toString(),
-                    modifier = Modifier.weight(1f),
                 )
                 OverviewMetric(
                     label = strings.totalTarget,
                     value = formatIdr(summary.totalTargetIdr),
-                    modifier = Modifier.weight(1f),
                 )
                 OverviewMetric(
                     label = strings.fullyFundedLabel,
                     value = "${summary.fullyFundedCount}/${summary.activeItemCount}",
-                    modifier = Modifier.weight(1f),
                 )
             }
         }
@@ -718,6 +885,7 @@ private fun SectionHeader(
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.semantics { heading() },
         )
         action?.invoke()
     }
@@ -943,24 +1111,6 @@ private fun UpcomingPlanCard(
 }
 
 @Composable
-private fun NearestGoalsRow(
-    goals: List<WishlistItemWithSavings>,
-    onItemClick: (UUID) -> Unit,
-) {
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        items(items = goals, key = { "nearest-${it.item.id}" }) { entry ->
-            GoalCarouselCard(
-                entry = entry,
-                onClick = { onItemClick(entry.item.id) },
-                modifier = Modifier.animateItem(),
-            )
-        }
-    }
-}
-
-@Composable
 private fun ReadyToBuyRow(
     goals: List<WishlistItemWithSavings>,
     onItemClick: (UUID) -> Unit,
@@ -1065,4 +1215,11 @@ private fun progressLabel(summary: DashboardSummary, strings: id.my.f1zz.whenyah
     summary.totalTargetIdr == 0L -> strings.noTargetAmountSet
     summary.overallProgress >= 1f -> strings.allActiveGoalsFunded
     else -> strings.percentageFunded((summary.overallProgress * 100).roundToInt())
+}
+
+private fun sortLabel(sort: ItemSortOrder, strings: AppStrings): String = when (sort) {
+    ItemSortOrder.RECENT -> strings.sortRecent
+    ItemSortOrder.NAME -> strings.sortName
+    ItemSortOrder.PROGRESS -> strings.sortProgress
+    ItemSortOrder.TARGET_PRICE -> strings.sortPrice
 }

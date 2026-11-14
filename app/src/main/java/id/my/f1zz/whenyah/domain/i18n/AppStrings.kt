@@ -54,6 +54,9 @@ interface AppStrings {
     val titlePurchasedArchive: String
     val titleArchivedItem: String
     val titleActivity: String
+    val overviewTab: String
+    val itemsTab: String
+    val nextUp: String
 
     val totalSaved: String
     val archiveShort: String
@@ -66,8 +69,6 @@ interface AppStrings {
     val allActiveGoalsFunded: String
     val recentActivity: String
     val viewAll: String
-    val upcomingPlans: String
-    val closestGoals: String
     val readyToBuy: String
     val allItems: String
     val searchItems: String
@@ -87,6 +88,7 @@ interface AppStrings {
     val filterCollection: String
     val filterStatus: String
     val filterPlan: String
+    val sortBy: String
     val clearFilterDescription: String
     val done: String
     val noItemsYet: String

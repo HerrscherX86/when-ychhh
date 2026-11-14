@@ -45,6 +45,15 @@ Implemented:
   - `ui/components/Adaptive.kt` caps content width (Home 960dp, Settings 840dp, detail/forms 720dp).
   - Collections, collection detail, and Archive use adaptive `LazyVerticalGrid`s.
   - `rememberFabVisibility` supports both list and grid states.
+- **Casual copy pass**: every `AppStrings` value in `EnglishStrings` and `IndonesianStrings` was
+  rewritten to the voice in `docs/COPY_STYLE.md` — warm, direct, contractions in English, `kamu` +
+  light Gaul in Indonesian, with errors and destructive dialogs kept consequence-first. Widget
+  metadata in `res/values*/strings.xml` was updated too.
+- **Home hierarchy**: the single long Home scroll is split into a pinned `Overview | Items`
+  segmented switch. Overview keeps the hero, one “Next up” card, the ready-to-buy row, recent
+  activity, and a “Browse all items” button; Items has a pinned search + filter row, applied chips,
+  and the list. Sort moved into the filter sheet, section headers use heading semantics, the hero
+  metrics wrap with `FlowRow`, and both lists use a larger FAB bottom inset.
 - **Predictive back**: `android:enableOnBackInvokedCallback="true"`; pop transitions remain fades.
 - **Dependencies**: Glance `1.2.0`, `glance-material3`, Compose Material3 Adaptive `1.3.0`.
   Glance pulls WorkManager transitively; reminders still use `AlarmManager`.
