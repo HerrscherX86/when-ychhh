@@ -121,6 +121,7 @@ class ReminderCoordinator @Inject constructor(
 
         if (notificationService.canPostNotifications()) {
             notificationService.showPlanReminder(
+                itemId = item.id,
                 planId = plan.id,
                 itemName = item.name,
                 contributionIdr = plan.contributionIdr,

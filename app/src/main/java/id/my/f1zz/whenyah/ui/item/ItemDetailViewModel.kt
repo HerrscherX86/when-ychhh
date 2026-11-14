@@ -126,6 +126,14 @@ class ItemDetailViewModel @Inject constructor(
     private val _transactionCompleted = MutableStateFlow<TransactionType?>(null)
     val transactionCompleted: StateFlow<TransactionType?> = _transactionCompleted.asStateFlow()
 
+    init {
+        val depositAmount = savedStateHandle.get<Long>("depositAmount") ?: 0L
+        if (depositAmount > 0) {
+            startTransaction(TransactionType.DEPOSIT, depositAmount)
+            savedStateHandle.remove<Long>("depositAmount")
+        }
+    }
+
     fun consumeTransactionCompleted() {
         _transactionCompleted.value = null
     }

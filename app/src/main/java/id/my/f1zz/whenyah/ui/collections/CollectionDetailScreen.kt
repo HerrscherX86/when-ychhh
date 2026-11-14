@@ -18,9 +18,11 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -51,6 +53,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import id.my.f1zz.whenyah.data.local.entity.CollectionEntity
 import id.my.f1zz.whenyah.domain.dashboard.DashboardSummary
 import id.my.f1zz.whenyah.domain.i18n.AppStrings
+import id.my.f1zz.whenyah.ui.components.AdaptiveContent
 import id.my.f1zz.whenyah.ui.components.EmptyState
 import id.my.f1zz.whenyah.ui.components.ItemCard
 import id.my.f1zz.whenyah.ui.components.ScreenPhase
@@ -72,7 +75,7 @@ fun CollectionDetailScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val strings = LocalAppStrings.current
     val collection = state.collection
-    val listState = rememberLazyListState()
+    val listState = rememberLazyGridState()
     val fabVisible by rememberFabVisibility(listState)
     val phase = when {
         state.isLoading -> ScreenPhase.Loading
@@ -81,6 +84,7 @@ fun CollectionDetailScreen(
     }
 
     Box(modifier = modifier.fillMaxSize()) {
+        AdaptiveContent(maxWidth = 1200.dp) {
         Crossfade(
             targetState = phase,
             animationSpec = tween(
@@ -106,7 +110,8 @@ fun CollectionDetailScreen(
                 }
 
                 ScreenPhase.Content -> collection?.let { loadedCollection ->
-                    LazyColumn(
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 300.dp),
                         state = listState,
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(
@@ -116,8 +121,9 @@ fun CollectionDetailScreen(
                             bottom = 96.dp,
                         ),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        item {
+                        item(span = { GridItemSpan(maxLineSpan) }) {
                             CollectionHeader(
                                 collection = loadedCollection,
                                 itemCount = state.items.size,
@@ -127,7 +133,7 @@ fun CollectionDetailScreen(
                         }
 
                         if (state.items.isEmpty()) {
-                            item {
+                            item(span = { GridItemSpan(maxLineSpan) }) {
                                 CollectionItemsEmptyState(
                                     strings = strings,
                                     onAddItem = { onAddItem(loadedCollection.id) },
@@ -147,6 +153,8 @@ fun CollectionDetailScreen(
                     }
                 }
             }
+        }
+
         }
 
         ScrollAwareAddFab(

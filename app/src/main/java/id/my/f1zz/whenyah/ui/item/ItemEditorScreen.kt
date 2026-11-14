@@ -94,6 +94,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import id.my.f1zz.whenyah.data.local.entity.CollectionEntity
 import id.my.f1zz.whenyah.domain.i18n.AppStrings
 import id.my.f1zz.whenyah.ui.components.ItemImage
+import id.my.f1zz.whenyah.ui.components.AdaptiveContent
 import id.my.f1zz.whenyah.ui.components.LocalAppFeedback
 import id.my.f1zz.whenyah.ui.i18n.LocalAppStrings
 import id.my.f1zz.whenyah.ui.navigation.LocalSetTopBarBackHandler
@@ -192,11 +193,12 @@ fun ItemEditorScreen(
             CircularProgressIndicator()
         }
     } else {
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .imePadding(),
-        ) {
+        AdaptiveContent(modifier = modifier, maxWidth = 720.dp) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .imePadding(),
+            ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -336,6 +338,7 @@ fun ItemEditorScreen(
                 },
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
+        }
         }
     }
 

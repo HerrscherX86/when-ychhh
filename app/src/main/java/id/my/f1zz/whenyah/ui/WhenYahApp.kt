@@ -3,6 +3,9 @@ package id.my.f1zz.whenyah.ui
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -11,13 +14,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +44,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import id.my.f1zz.whenyah.data.navigation.AppLauncher
+import id.my.f1zz.whenyah.data.navigation.LaunchRequest
 import id.my.f1zz.whenyah.domain.i18n.AppStrings
 import id.my.f1zz.whenyah.navigation.Routes
 import id.my.f1zz.whenyah.navigation.TopLevelDestination
@@ -60,7 +70,7 @@ import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WhenYahApp() {
+fun WhenYahApp(launcher: AppLauncher) {
     val strings = LocalAppStrings.current
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -70,6 +80,9 @@ fun WhenYahApp() {
         currentDestination?.hierarchy?.any { it.route == destination.route } == true
     }
     val isTopLevel = currentTopLevelDestination != null
+    val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
+    val isExpanded = windowSizeClass.isWidthAtLeastBreakpoint(600)
+    val launchRequest by launcher.request.collectAsStateWithLifecycle()
     var topBarBackHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val feedbackScope = rememberCoroutineScope()
@@ -118,6 +131,25 @@ fun WhenYahApp() {
         else -> currentTopLevelDestination?.label(strings) ?: strings.appName
     }
 
+    LaunchedEffect(launchRequest) {
+        when (val request = launchRequest) {
+            is LaunchRequest.OpenItem -> navController.navigate(
+                Routes.itemDetail(request.itemId, request.depositAmountIdr)
+            ) {
+                launchSingleTop = true
+            }
+
+            LaunchRequest.AddItem -> navController.navigate(Routes.itemAdd()) {
+                launchSingleTop = true
+            }
+
+            null -> Unit
+        }
+        if (launchRequest != null) {
+            launcher.consume()
+        }
+    }
+
     Scaffold(
         snackbarHost = {
             SnackbarHost(
@@ -151,7 +183,7 @@ fun WhenYahApp() {
             )
         },
         bottomBar = {
-            if (isTopLevel) {
+            if (isTopLevel && !isExpanded) {
                 NavigationBar {
                     TopLevelDestination.entries.forEach { destination ->
                         NavigationBarItem(
@@ -185,15 +217,48 @@ fun WhenYahApp() {
             LocalAppFeedback provides appFeedback,
             LocalSetTopBarBackHandler provides { handler -> topBarBackHandler = handler },
         ) {
-            NavHost(
-                navController = navController,
-                startDestination = TopLevelDestination.HOME.route,
-                modifier = Modifier.padding(innerPadding),
-                enterTransition = { detailFadeIn },
-                exitTransition = { detailFadeOut },
-                popEnterTransition = { detailFadeIn },
-                popExitTransition = { detailFadeOut },
+            Row(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize(),
             ) {
+                if (isExpanded && isTopLevel) {
+                    NavigationRail {
+                        TopLevelDestination.entries.forEach { destination ->
+                            NavigationRailItem(
+                                selected = currentTopLevelDestination == destination,
+                                onClick = {
+                                    navController.navigate(destination.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                icon = { Icon(destination.icon, contentDescription = null) },
+                                label = {
+                                    Text(
+                                        text = destination.label(strings),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                },
+                            )
+                        }
+                    }
+                }
+                NavHost(
+                    navController = navController,
+                    startDestination = TopLevelDestination.HOME.route,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    enterTransition = { detailFadeIn },
+                    exitTransition = { detailFadeOut },
+                    popEnterTransition = { detailFadeIn },
+                    popExitTransition = { detailFadeOut },
+                ) {
             composable(
                 route = TopLevelDestination.HOME.route,
                 enterTransition = { tabEnter },
@@ -258,6 +323,10 @@ fun WhenYahApp() {
                 route = Routes.ITEM_DETAIL,
                 arguments = listOf(
                     navArgument("itemId") { type = NavType.StringType },
+                    navArgument("depositAmount") {
+                        type = NavType.LongType
+                        defaultValue = 0L
+                    },
                 ),
             ) { entry ->
                 val itemId = checkNotNull(entry.arguments?.getString("itemId"))
@@ -365,10 +434,10 @@ fun WhenYahApp() {
                 )
             }
             }
+            }
         }
     }
 }
-
 private fun TopLevelDestination.label(strings: AppStrings): String = when (this) {
     TopLevelDestination.HOME -> strings.navHome
     TopLevelDestination.COLLECTIONS -> strings.navCollections

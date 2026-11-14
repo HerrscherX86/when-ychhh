@@ -16,8 +16,8 @@ android {
         applicationId = "id.my.f1zz.whenyah"
         minSdk = 31
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.2"
+        versionCode = 4
+        versionName = "1.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -68,6 +68,10 @@ dependencies {
 
     implementation(libs.coil.compose)
     implementation(libs.androidx.datastore.preferences)
+
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
+    implementation(libs.androidx.compose.material3.adaptive)
 
     implementation(libs.kotlinx.serialization.json)
 

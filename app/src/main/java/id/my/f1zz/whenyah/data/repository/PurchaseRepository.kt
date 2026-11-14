@@ -7,6 +7,7 @@ import id.my.f1zz.whenyah.data.local.dao.SavingsEventDao
 import id.my.f1zz.whenyah.data.local.dao.WishlistItemDao
 import id.my.f1zz.whenyah.data.local.entity.PurchaseRecordEntity
 import id.my.f1zz.whenyah.data.local.entity.SavingsEventEntity
+import id.my.f1zz.whenyah.data.widget.WidgetUpdater
 import id.my.f1zz.whenyah.domain.model.ItemStatus
 import id.my.f1zz.whenyah.domain.model.SavingsEventType
 import id.my.f1zz.whenyah.domain.purchase.PurchaseAccounting
@@ -24,6 +25,7 @@ class PurchaseRepository @Inject constructor(
     private val itemDao: WishlistItemDao,
     private val savingsEventDao: SavingsEventDao,
     private val purchaseRecordDao: PurchaseRecordDao,
+    private val widgetUpdater: WidgetUpdater,
 ) {
     fun observePurchasedItemsWithSavings(): Flow<List<WishlistItemWithSavings>> =
         combine(itemDao.observePurchased(), savingsEventDao.observeAll()) { items, events ->
@@ -46,7 +48,7 @@ class PurchaseRepository @Inject constructor(
         purchaseRecordDao.observeLatestForItem(itemId)
 
     suspend fun purchaseItem(itemId: UUID): Result<PurchaseRecordEntity> = runCatching {
-        database.withTransaction {
+        val record = database.withTransaction {
             val item = itemDao.findById(itemId) ?: error("Item not found")
 
             if (item.status == ItemStatus.PURCHASED) {
@@ -92,6 +94,9 @@ class PurchaseRepository @Inject constructor(
 
             purchaseRecord
         }
+
+        widgetUpdater.refresh()
+        record
     }
 
     suspend fun restoreItem(itemId: UUID): Result<Unit> = runCatching {
@@ -109,5 +114,7 @@ class PurchaseRepository @Inject constructor(
                 )
             )
         }
+
+        widgetUpdater.refresh()
     }
 }

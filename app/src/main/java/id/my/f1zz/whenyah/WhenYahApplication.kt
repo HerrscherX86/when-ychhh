@@ -5,6 +5,7 @@ import dagger.hilt.android.HiltAndroidApp
 import id.my.f1zz.whenyah.data.notification.NotificationService
 import id.my.f1zz.whenyah.data.notification.ReminderCoordinator
 import id.my.f1zz.whenyah.data.settings.SettingsRepository
+import id.my.f1zz.whenyah.data.widget.WidgetUpdater
 import id.my.f1zz.whenyah.domain.i18n.LanguageStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,6 +27,9 @@ class WhenYahApplication : Application() {
     @Inject
     lateinit var languageStore: LanguageStore
 
+    @Inject
+    lateinit var widgetUpdater: WidgetUpdater
+
     override fun onCreate() {
         super.onCreate()
         notificationService.ensureChannels()
@@ -37,6 +41,9 @@ class WhenYahApplication : Application() {
         }
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             reminderCoordinator.syncAllSchedules()
+        }
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            widgetUpdater.refresh()
         }
     }
 }

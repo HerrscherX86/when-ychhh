@@ -8,6 +8,7 @@ import id.my.f1zz.whenyah.data.local.dao.WishlistItemDao
 import id.my.f1zz.whenyah.data.local.entity.CollectionEntity
 import id.my.f1zz.whenyah.data.local.entity.WishlistItemEntity
 import id.my.f1zz.whenyah.data.local.model.CollectionWithItemCount
+import id.my.f1zz.whenyah.data.widget.WidgetUpdater
 import id.my.f1zz.whenyah.domain.model.ItemStatus
 import id.my.f1zz.whenyah.domain.savings.SavingsCalculator
 import kotlinx.coroutines.flow.Flow
@@ -23,6 +24,7 @@ class WishlistRepository @Inject constructor(
     private val collectionDao: CollectionDao,
     private val savingsEventDao: SavingsEventDao,
     private val imageStore: ItemImageStore,
+    private val widgetUpdater: WidgetUpdater,
 ) {
     fun observeActiveItemsWithSavings(): Flow<List<WishlistItemWithSavings>> =
         combine(itemDao.observeActive(), savingsEventDao.observeAll()) { items, events ->
@@ -121,6 +123,7 @@ class WishlistRepository @Inject constructor(
             imageStore.delete(previousImage)
         }
 
+        widgetUpdater.refresh()
         return id
     }
 
@@ -128,6 +131,7 @@ class WishlistRepository @Inject constructor(
         val item = itemDao.findById(itemId) ?: return
         itemDao.deleteById(itemId)
         imageStore.delete(item.imageRelativePath)
+        widgetUpdater.refresh()
     }
 
     suspend fun createCollection(name: String): UUID {

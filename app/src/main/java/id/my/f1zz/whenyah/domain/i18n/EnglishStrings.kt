@@ -312,6 +312,26 @@ object EnglishStrings : AppStrings {
     override val notificationChannelSummaries = "Progress summaries"
     override val notificationChannelSummariesDescription = "Periodic savings progress summaries"
     override val summaryNotificationTitle = "Savings progress"
+    override val notificationActionAddSavings = "Add savings"
+
+    override val widgetSectionTitle = "Home screen widget"
+    override val widgetSectionDescription =
+        "Choose a style to add to your home screen."
+    override val widgetAddAction = "Add widget"
+    override val widgetAddedMessage = "Widget added to your home screen."
+    override val widgetNotSupportedMessage =
+        "This launcher does not support adding widgets. Add it from the widget picker instead."
+    override val widgetOverview = "Overview"
+    override val widgetClosestGoal = "Closest goal"
+    override val widgetReadyToBuy = "Ready to buy"
+    override val widgetNothingReady = "Nothing ready yet"
+
+    override fun widgetSummary(active: Int, funded: Int): String =
+        "$active active · $funded funded"
+
+    override fun widgetReadyCount(count: Int): String = "$count ready"
+
+    override fun widgetMore(count: Int): String = "+$count more"
 
     override val couldNotRecordTransaction = "Could not record transaction"
     override val withdrawalExceeds = "Withdrawal exceeds available savings"

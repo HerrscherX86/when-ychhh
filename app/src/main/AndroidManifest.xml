@@ -10,7 +10,7 @@
     <application
         android:name=".WhenYahApplication"
         android:allowBackup="true"
-        android:enableOnBackInvokedCallback="false"
+        android:enableOnBackInvokedCallback="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -22,6 +22,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:theme="@style/Theme.WhenYah"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
@@ -43,6 +44,42 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
                 <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
             </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".data.widget.WhenYahWidgetReceiver"
+            android:exported="false"
+            android:label="@string/whenyah_widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/whenyah_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".data.widget.ClosestGoalWidgetReceiver"
+            android:exported="false"
+            android:label="@string/whenyah_widget_closest_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/whenyah_widget_closest_info" />
+        </receiver>
+
+        <receiver
+            android:name=".data.widget.ReadyToBuyWidgetReceiver"
+            android:exported="false"
+            android:label="@string/whenyah_widget_ready_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/whenyah_widget_ready_info" />
         </receiver>
     </application>
 

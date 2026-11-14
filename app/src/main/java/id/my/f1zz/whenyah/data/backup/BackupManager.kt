@@ -13,6 +13,7 @@ import id.my.f1zz.whenyah.data.local.entity.SavingsPlanEntity
 import id.my.f1zz.whenyah.data.local.entity.WishlistItemEntity
 import id.my.f1zz.whenyah.data.notification.ReminderCoordinator
 import id.my.f1zz.whenyah.data.settings.SettingsRepository
+import id.my.f1zz.whenyah.data.widget.WidgetUpdater
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
@@ -51,6 +52,7 @@ class BackupManager @Inject constructor(
     private val database: WhenYahDatabase,
     private val settingsRepository: SettingsRepository,
     private val reminderCoordinator: ReminderCoordinator,
+    private val widgetUpdater: WidgetUpdater,
 ) {
     private val json = Json {
         ignoreUnknownKeys = false
@@ -205,6 +207,7 @@ class BackupManager @Inject constructor(
                     settingsRepository.replaceSettings(validated.settings)
                 }.isSuccess
                 runCatching { reminderCoordinator.syncAllSchedules() }
+                widgetUpdater.refresh()
 
                     BackupRestoreResult(
                         itemCount = newItems.size,

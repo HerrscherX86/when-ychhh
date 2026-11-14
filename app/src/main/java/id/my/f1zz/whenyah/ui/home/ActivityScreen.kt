@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import id.my.f1zz.whenyah.ui.components.AdaptiveContent
 import id.my.f1zz.whenyah.ui.components.EmptyState
 import id.my.f1zz.whenyah.ui.components.SavingsEventRow
 import id.my.f1zz.whenyah.ui.components.ScreenPhase
@@ -39,14 +40,15 @@ fun ActivityScreen(
         else -> ScreenPhase.Content
     }
 
-    Crossfade(
-        targetState = phase,
-        animationSpec = tween(
-            durationMillis = AppMotion.MediumMillis,
-            easing = AppMotion.StandardEasing,
-        ),
-        label = "activityPhase",
-    ) { targetPhase ->
+    AdaptiveContent(modifier = modifier, maxWidth = 720.dp) {
+        Crossfade(
+            targetState = phase,
+            animationSpec = tween(
+                durationMillis = AppMotion.MediumMillis,
+                easing = AppMotion.StandardEasing,
+            ),
+            label = "activityPhase",
+        ) { targetPhase ->
         when (targetPhase) {
             ScreenPhase.Loading -> {
                 Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -96,5 +98,6 @@ fun ActivityScreen(
                 }
             }
         }
+    }
     }
 }

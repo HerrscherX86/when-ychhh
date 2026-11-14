@@ -1,3 +1,9 @@
 <resources>
-    <string name="app_name">When Yah</string>
+    <string name="app_name" translatable="false">When Yah</string>
+    <string name="whenyah_widget_name">When Yah savings</string>
+    <string name="whenyah_widget_description">Total saved, overall progress, and active goals.</string>
+    <string name="whenyah_widget_closest_name">When Yah closest goal</string>
+    <string name="whenyah_widget_closest_description">Progress and savings left for your nearest goal.</string>
+    <string name="whenyah_widget_ready_name">When Yah ready to buy</string>
+    <string name="whenyah_widget_ready_description">Items whose savings target is fully funded.</string>
 </resources>

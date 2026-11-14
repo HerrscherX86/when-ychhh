@@ -1,13 +1,76 @@
 # When Yah — Agent Handoff
 
-> Snapshot date: 2026-11-10  
-> Git branch: `main`  
-> HEAD: `a3d61a5a0027b2ae3e2bd77e0d7230b225c0c1ca` — `Update v1.2 1st Half`  
-> Remote: `https://github.com/HerrscherX86/when-ychhh.git`  
-> App version: `versionCode = 2`, `versionName = "1.1"`  
-> Last verified: `:app:assembleDebug`, `:app:testDebugUnitTest` (78 tests), `:app:lintDebug` (0 errors, 11 warnings)
+> Snapshot date: 2026-11-14
+> Git branch: `main`
+> HEAD: `5d94cda` — `Update v1.2 2nd half`
+> Remote: `https://github.com/HerrscherX86/when-ychhh.git`
+> App version: `versionCode = 4`, `versionName = "1.3"`
+> Last verified: `:app:assembleDebug`, `:app:testDebugUnitTest` (100 tests), `:app:lintDebug` (0 errors, 11 warnings)
 
 This document is the detailed handoff for another coding agent. `AGENTS.md` remains the concise always-loaded guide; this file records the current state, history, decisions, and known gaps.
+
+---
+
+## A0. v1.3 status (2026-11-14)
+
+v1.3 “Daily-Use Polish” is **implemented in the working tree but not committed or published**. The
+v1.2 sections below remain accurate as the baseline history; this section records what changed.
+
+Implemented:
+
+- **Home-screen widgets** in `data/widget/`:
+  - `WhenYahWidgetBase` loads a shared `WidgetSnapshot` from `WidgetSnapshotFactory` (totals,
+    progress, active/funded counts, closest goal, ready-to-buy list); covered by
+    `WidgetSnapshotFactoryTest`.
+  - Three styles: `WhenYahWidget` (overview), `ClosestGoalWidget`, and `ReadyToBuyWidget`. Each has
+    its own receiver and `res/xml/*_info.xml`.
+  - Widget copy comes from `SettingsRepository.currentSettings().language`, not the process
+    `LanguageStore`.
+  - `WidgetUpdater.refresh()` updates all three widgets after item/ledger/purchase/restore/backup
+    writes, on app start, and after language changes. Failures are swallowed so a widget problem
+    cannot fail a savings write.
+  - Settings → Appearance can pin any style through `WhenYahWidgetType`.
+- **Notification quick-deposit action**:
+  - `NotificationService` adds an “Add savings” action to plan reminders and opens the item detail
+    with the deposit dialog pre-filled with the plan contribution.
+  - Notification bodies open the item detail; goal notifications open the item; summaries/tests open
+    Home.
+  - `LaunchContract` + `LaunchRequestParser` (pure) + `AppLauncher` route intents into
+    `WhenYahApp`. `MainActivity` is `singleTop` and handles cold-start intents only when
+    `savedInstanceState == null`.
+  - `Routes.ITEM_DETAIL` now accepts an optional `depositAmount` long arg (0 = no dialog);
+    `ItemDetailViewModel` consumes it and removes it from `SavedStateHandle`.
+- **Adaptive layout**:
+  - `NavigationRail` at ≥600dp on top-level routes; bottom bar remains on phones.
+  - `ui/components/Adaptive.kt` caps content width (Home 960dp, Settings 840dp, detail/forms 720dp).
+  - Collections, collection detail, and Archive use adaptive `LazyVerticalGrid`s.
+  - `rememberFabVisibility` supports both list and grid states.
+- **Predictive back**: `android:enableOnBackInvokedCallback="true"`; pop transitions remain fades.
+- **Dependencies**: Glance `1.2.0`, `glance-material3`, Compose Material3 Adaptive `1.3.0`.
+  Glance pulls WorkManager transitively; reminders still use `AlarmManager`.
+
+Verification:
+
+- `:app:assembleDebug` — success.
+- `:app:testDebugUnitTest` — **100 tests**, 0 failures.
+- `:app:lintDebug` — 0 errors, 11 warnings.
+- Device/emulator checks are **pending** for the widget, notification action, predictive back, and
+  tablet/foldable layout. See `docs/ROADMAP_V1.3.md` for the checklist.
+
+Known v1.3 limitations:
+
+- Widgets can lag briefly after a write because Glance schedules updates through WorkManager.
+- The widget uses the default Material 3 palette, not the app’s custom accent/dynamic color.
+- Two-pane tablet list-detail is intentionally out of scope.
+- Predictive back must be verified on an API 36 device before release; the manifest flag is the only
+  change and can be reverted if the preview regresses.
+
+Next steps:
+
+1. Run the v1.3 manual verification matrix on a phone and a tablet/resizable emulator.
+2. Commit the working tree.
+3. Build/sign v1.3 and publish the GitHub release with `update.json`.
+4. Verify v1.2 → v1.3 update detection and data preservation.
 
 ---
 
@@ -27,7 +90,7 @@ Main constraints:
 - UI languages: **English** and **Indonesian** (Indonesian uses a friendly Gaul register).
 - Product source of truth: `wishlist_savings_tracker_PRD_v1.2.md`. Code behavior takes precedence over the README when they disagree.
 
-Current high-level objective: v1.2 is in progress. Track A (“Finishing Touches”) is implemented and committed; the version has not yet been bumped to 1.2 and no v1.2 release has been prepared in this working tree. Track B (“Find & Organize”) is planned but not implemented.
+Current high-level objective: v1.3 (“Daily-Use Polish”) is implemented in the working tree but not committed or published. See §A0 for the v1.3 summary; the v1.2 Track A/B work is committed and released.
 
 ---
 
@@ -405,9 +468,9 @@ There is **no backend, API, authentication, authorization, or RLS** in this repo
 
 ### Broken / needs investigation
 
-- No known compile/runtime failure in the current committed source.
+- No known compile/runtime failure in the current working tree; `assembleDebug`, unit tests, and lint pass.
 - The update checker depends on an external release asset; if it is missing or the release is marked prerelease, checks fail silently by design.
-- The app is still version 1.1 even though Track A is committed; do not assume v1.2 is released.
+- The app is version 1.3 (`versionCode = 4`), but v1.3 is not published yet.
 - The test device at handoff time had a fresh debug install with empty app data; that is device state, not repository state.
 
 ---
@@ -487,49 +550,48 @@ A shared `AppFeedback` avoids silent closes, gives consistent snackbar/haptic fe
 
 ```text
 Branch: main
-HEAD:   a3d61a5a0027b2ae3e2bd77e0d7230b225c0c1ca
-Commit: Update v1.2 1st Half
+HEAD:   5d94cda — Update v1.2 2nd half
 Remote: origin https://github.com/HerrscherX86/when-ychhh.git
 Tags:   none
 ```
 
 Working tree:
 
-- Application source and Track A are **committed** in `a3d61a5`.
-- `docs/ROADMAP_V1.2.md` is **untracked**.
+- v1.3 source changes are **uncommitted**.
+- `docs/ROADMAP_V1.3.md`, `data/widget/`, `data/navigation/`, `ui/components/Adaptive.kt`, the widget resources, and the two new tests are untracked.
+- `docs/update.json` and `app/build.gradle.kts` are bumped to v1.3.
 - `.opencode/skills/ui-ux-pro-max/scripts/__pycache__/` is untracked and unrelated; do not commit it.
-- This handoff task adds `docs/agent-handoff.md` and updates `AGENTS.md`. Those are documentation-only changes.
 
-### Most recent implementation changes (Track A — committed)
+### Most recent implementation changes (v1.3 — uncommitted)
 
-- `AppFeedback` + snackbar host/haptics, wired into item/collection/transaction/purchase/backup/update actions.
-- Validation focus + live-region errors; IDR visual transformation shared with the plan editor.
-- Accessibility: progress content descriptions, nav/top-bar ellipsis, `FlowRow` chip groups, 200% font fixes.
-- Reminder reliability card: exact-alarm/battery status, OEM help, test notification, updated copy.
-- Update dialog: “Skip this version”, tests.
-- Home FAB hides while search is focused.
+- Glance widget + snapshot factory + updater + receiver + widget info XML.
+- Notification “Add savings” action and launch routing (`AppLauncher`, `LaunchRequestParser`, `MainActivity` `singleTop`, `depositAmount` route arg).
+- Navigation rail, `AdaptiveContent`, adaptive grids, grid FAB overload.
+- Predictive back enabled.
+- Glance 1.2.0 / Material3 Adaptive 1.3.0 dependencies and new unit tests.
 
 ### Unfinished work
 
-- v1.2 release preparation:
-  - bump `versionCode` to 3 and `versionName` to 1.2;
-  - update `docs/update.json` to versionCode 3/versionName 1.2;
+- v1.3 device/emulator verification: widget lifecycle and refresh, notification action cold/warm start, predictive back, tablet/foldable rail + grids.
+- v1.3 release preparation:
+  - confirm `versionCode = 4` and `versionName = "1.3"`;
   - build/sign with the same keystore;
   - publish a normal (non-prerelease) GitHub release with the APK and `update.json`;
-  - verify v1.1 → v1.2 install and the first real automatic prompt.
-- Track B from the roadmap.
+  - verify v1.2 → v1.3 install and update detection.
 - Full TalkBack/contrast audit and Compose instrumentation tests.
 - FAB/content overlap polish.
+- Optional future work: two-pane tablet list-detail, widget theming.
 
 ### Blockers
 
 - No code blocker.
 - Release publication requires the external keystore/password. The keystore is not in the repo.
-- v1.2 cannot be released until `docs/update.json` and the APK version are bumped together.
-- v1.0 users have no update checker and need one manual install of v1.1+.
+- v1.3 device verification cannot be completed without a phone/tablet or emulator.
 
 ### Known bugs / limitations
 
+- Widgets can lag briefly after a write; Glance schedules updates through WorkManager.
+- The widget uses the default Material 3 palette, not the app’s custom accent.
 - Home FAB can overlap content at rest; focus-hide is a mitigation, not a full fix.
 - Update checks silently fail if the release asset is missing, the release is a prerelease, or the repo URL changes.
 - OEM battery managers can still delay reminders.
@@ -540,15 +602,11 @@ Working tree:
 
 ### Immediate next steps
 
-1. Decide whether to commit `docs/ROADMAP_V1.2.md`, `docs/agent-handoff.md`, and the `AGENTS.md` update.
-2. Prepare v1.2:
-   - `versionCode = 3`, `versionName = "1.2"`;
-   - update `docs/update.json`;
-   - sign with the existing v1.0/v1.1 keystore;
-   - publish the release with `update.json` as an asset;
-   - test on a v1.1 install.
-3. Then start Track B only after confirming priority/scope with the owner.
-4. Do not discard the untracked roadmap or this handoff.
+1. Run the v1.3 manual verification matrix in `docs/ROADMAP_V1.3.md`.
+2. Commit the v1.3 working tree.
+3. Build/sign and publish v1.3 with `update.json`.
+4. Test update detection from a v1.2 install.
+5. Decide whether the next release is tablet list-detail, accessibility/tests, or insights.
 
 ---
 

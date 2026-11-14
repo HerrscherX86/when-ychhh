@@ -40,6 +40,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -66,7 +67,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import id.my.f1zz.whenyah.data.update.ManualUpdateState
+import id.my.f1zz.whenyah.data.widget.WhenYahWidgetType
 import id.my.f1zz.whenyah.domain.i18n.AppLanguage
+import id.my.f1zz.whenyah.domain.i18n.AppStrings
+import id.my.f1zz.whenyah.ui.components.AdaptiveContent
 import id.my.f1zz.whenyah.ui.components.LocalAppFeedback
 import id.my.f1zz.whenyah.domain.settings.AccentColor
 import id.my.f1zz.whenyah.domain.settings.SummaryCadence
@@ -160,13 +164,14 @@ fun SettingsScreen(
         }
     }
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        item {
-            SettingsSection(icon = Icons.Outlined.Palette, title = strings.appearance) {
+    AdaptiveContent(modifier = modifier, maxWidth = 840.dp) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            item {
+                SettingsSection(icon = Icons.Outlined.Palette, title = strings.appearance) {
                 Text(
                     text = strings.theme,
                     style = MaterialTheme.typography.labelLarge,
@@ -231,6 +236,52 @@ fun SettingsScreen(
                 if (settings.useDynamicColor) {
                     Text(
                         text = strings.accentHelp,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Text(
+                    text = strings.widgetSectionTitle,
+                    style = MaterialTheme.typography.labelLarge,
+                )
+                Text(
+                    text = strings.widgetSectionDescription,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                val widgetPinSupported = remember { viewModel.isWidgetPinSupported() }
+                if (widgetPinSupported) {
+                    Text(
+                        text = strings.widgetAddAction,
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        WhenYahWidgetType.entries.forEach { type ->
+                            OutlinedButton(
+                                onClick = {
+                                    viewModel.requestWidgetPin(type) { added ->
+                                        if (added) {
+                                            feedback.success(strings.widgetAddedMessage)
+                                        } else {
+                                            feedback.info(strings.widgetNotSupportedMessage)
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.heightIn(min = 48.dp),
+                                shape = RoundedCornerShape(18.dp),
+                            ) {
+                                Text(widgetTypeLabel(type, strings))
+                            }
+                        }
+                    }
+                } else {
+                    Text(
+                        text = strings.widgetNotSupportedMessage,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -565,6 +616,7 @@ fun SettingsScreen(
             }
         }
     }
+    }
 
     pendingRestoreUri?.let { uri ->
         AlertDialog(
@@ -621,6 +673,12 @@ fun SettingsScreen(
 private fun backupFileName(): String {
     val stamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmm"))
     return "whenyah-backup-$stamp.zip"
+}
+
+private fun widgetTypeLabel(type: WhenYahWidgetType, strings: AppStrings): String = when (type) {
+    WhenYahWidgetType.OVERVIEW -> strings.widgetOverview
+    WhenYahWidgetType.CLOSEST_GOAL -> strings.widgetClosestGoal
+    WhenYahWidgetType.READY_TO_BUY -> strings.widgetReadyToBuy
 }
 
 @Composable

@@ -1,6 +1,6 @@
 {
-  "versionCode": 2,
-  "versionName": "1.1",
+  "versionCode": 4,
+  "versionName": "1.3",
   "releaseUrl": "https://github.com/HerrscherX86/when-ychhh/releases/latest",
-  "notes": "Perbaikan jadwal reminder mingguan/bulanan dan pengecekan update dari GitHub."
+  "notes": "Widget layar utama buat lihat total tabungan dan target terdekat, aksi cepat tambah tabungan langsung dari notifikasi reminder, tampilan yang lebih nyaman di tablet dan foldable, plus predictive back yang sudah aktif."
 }

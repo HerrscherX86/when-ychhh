@@ -50,6 +50,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import id.my.f1zz.whenyah.domain.model.PlanFrequency
 import id.my.f1zz.whenyah.domain.plan.SavingsPlanProjection
+import id.my.f1zz.whenyah.ui.components.AdaptiveContent
 import id.my.f1zz.whenyah.ui.components.ConfirmDeleteDialog
 import id.my.f1zz.whenyah.ui.components.EmptyState
 import id.my.f1zz.whenyah.ui.components.LocalAppFeedback
@@ -105,14 +106,15 @@ fun SavingsPlanScreen(
         if (state.error != null) contributionFocusRequester.requestFocus()
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .imePadding()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    AdaptiveContent(modifier = modifier, maxWidth = 720.dp) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .imePadding()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
         Text(
             text = item.name,
             style = MaterialTheme.typography.headlineSmall,
@@ -264,6 +266,7 @@ fun SavingsPlanScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+    }
     }
 
     if (showDeleteDialog) {

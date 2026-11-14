@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/min%20SDK-31-3DDC84" alt="Min SDK 31" />
   <img src="https://img.shields.io/badge/Kotlin-2.2.10-7F52FF?logo=kotlin&amp;logoColor=white" alt="Kotlin 2.2.10" />
   <img src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4" alt="Jetpack Compose Material 3" />
-  <img src="https://img.shields.io/badge/status-initial%20release-orange" alt="Status initial release" />
+  <img src="https://img.shields.io/badge/status-v1.3-orange" alt="Status v1.3" />
 </p>
 
 > When Yah **tidak** menahan, memindahkan, atau memverifikasi uang sungguhan. Aplikasi ini cuma mencatat rencana dan riwayat tabunganmu.
@@ -85,6 +85,26 @@
 - Aktivitas terbaru, rencana terdekat, dan barang yang paling dekat dengan target.
 - Daftar semua barang aktif dengan pencarian dan filter.
 
+### Widget layar utama
+- Tiga pilihan widget: **Ringkasan**, **Target terdekat**, dan **Siap dibeli**.
+- Ringkasan: total tabungan, progress keseluruhan, dan jumlah target aktif/tercapai.
+- Target terdekat: nama target, sisa nominal, dan progress.
+- Siap dibeli: daftar barang yang tabungannya sudah mencapai target.
+- Ketuk widget untuk membuka app; ketuk target/barang untuk langsung ke detailnya.
+- Widget ikut diperbarui setelah setoran, penarikan, pembelian, restore, dan perubahan bahasa.
+- Bisa ditambahkan dari Settings → Tampilan, atau dari pemilih widget launcher.
+
+### Aksi cepat dari notifikasi
+- Notifikasi reminder rencana punya tombol **Tambah tabungan**.
+- Tombol itu langsung membuka detail barang dengan dialog setoran yang sudah terisi nominal rencana; nominal masih bisa diubah.
+- Ketuk isi notifikasi untuk membuka detail barang tanpa dialog.
+
+### Tablet dan foldable
+- Navigasi otomatis berubah jadi rail saat lebar layar ≥600dp.
+- Koleksi, isi koleksi, dan arsip tampil sebagai grid 1–3 kolom sesuai lebar layar.
+- Konten detail dan Settings dibatasi lebarnya supaya tetap nyaman dibaca di layar besar.
+- Predictive back aktif dengan transisi fade yang halus.
+
 ### Pembelian dan arsip
 - Tandai barang sebagai dibeli: seluruh saldo tersedia dicatat sebagai `PURCHASE_SPEND`, lalu barang dipindahkan ke arsip.
 - Riwayat transaksi tetap utuh setelah dibeli.
@@ -153,6 +173,8 @@ When Yah memakai aturan akuntansi yang ketat supaya angka tabungan tetap konsist
 | Dependency injection | Hilt |
 | Preferensi | Preferences DataStore |
 | Gambar | Coil |
+| Widget | Glance |
+| Layout adaptif | Compose Material 3 Adaptive |
 | Backup | kotlinx.serialization + ZIP + SHA-256 |
 | Notifikasi | AlarmManager + BroadcastReceiver |
 | Build | Gradle 9.4.1, AGP 9.2.1, KSP |
@@ -164,7 +186,7 @@ When Yah memakai aturan akuntansi yang ketat supaya angka tabungan tetap konsist
 ## 📱 Requirement
 
 - Android 12 (API 31) atau lebih baru di perangkat.
-- JDK 17 atau lebih baru untuk build.
+- JDK 21 untuk toolchain Gradle (source/target app tetap Java 11).
 - Android SDK Platform 37 (`compileSdk = 37`).
 - Android Studio versi terbaru yang mendukung AGP 9.2.1, atau build lewat CLI.
 
@@ -211,9 +233,9 @@ Untuk maintainer: proses signing dan publikasi dijelaskan di [docs/RELEASING.md]
 
 ## 📌 Status
 
-Versi **1.1** — perbaikan jadwal reminder mingguan/bulanan, pengecekan update dari GitHub, dan migrasi database ke v2. Belum tersedia di Google Play.
+Versi **1.3** — widget layar utama, aksi cepat tambah tabungan dari notifikasi, layout adaptif untuk tablet/foldable, dan predictive back. Belum tersedia di Google Play.
 
-Rencana rilis berikutnya: [docs/ROADMAP_V1.2.md](docs/ROADMAP_V1.2.md) (belum diimplementasikan).
+Catatan rilis: [docs/ROADMAP_V1.3.md](docs/ROADMAP_V1.3.md).
 
 ---
 

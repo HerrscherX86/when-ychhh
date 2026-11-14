@@ -16,6 +16,8 @@ import id.my.f1zz.whenyah.data.settings.SettingsRepository
 import id.my.f1zz.whenyah.data.update.ManualUpdateState
 import id.my.f1zz.whenyah.data.update.UpdateManager
 import id.my.f1zz.whenyah.data.update.UpdatePreferences
+import id.my.f1zz.whenyah.data.widget.WhenYahWidgetType
+import id.my.f1zz.whenyah.data.widget.WidgetUpdater
 import id.my.f1zz.whenyah.domain.i18n.AppLanguage
 import id.my.f1zz.whenyah.domain.i18n.LanguageStore
 import id.my.f1zz.whenyah.domain.settings.AccentColor
@@ -40,6 +42,7 @@ class SettingsViewModel @Inject constructor(
     private val languageStore: LanguageStore,
     private val updatePreferences: UpdatePreferences,
     private val updateManager: UpdateManager,
+    private val widgetUpdater: WidgetUpdater,
 ) : ViewModel() {
     val settings: StateFlow<AppSettings> = settingsRepository.settings.stateIn(
         scope = viewModelScope,
@@ -99,7 +102,14 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.setLanguage(value)
             languageStore.update(value)
             notificationService.ensureChannels()
+            widgetUpdater.refresh()
         }
+    }
+
+    fun isWidgetPinSupported(): Boolean = widgetUpdater.isPinSupported()
+
+    fun requestWidgetPin(type: WhenYahWidgetType, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch { onResult(widgetUpdater.requestPin(type)) }
     }
 
     fun setThemeMode(value: ThemeMode) {

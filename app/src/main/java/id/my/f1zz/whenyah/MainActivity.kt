@@ -19,8 +19,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
+import id.my.f1zz.whenyah.data.navigation.AppLauncher
+import id.my.f1zz.whenyah.data.navigation.LaunchContract
+import id.my.f1zz.whenyah.data.navigation.LaunchRequest
+import id.my.f1zz.whenyah.data.navigation.LaunchRequestParser
 import id.my.f1zz.whenyah.data.update.UpdateManager
+import id.my.f1zz.whenyah.data.widget.WidgetUpdater
 import id.my.f1zz.whenyah.domain.i18n.AppStringsFactory
 import id.my.f1zz.whenyah.ui.MainViewModel
 import id.my.f1zz.whenyah.ui.WhenYahApp
@@ -38,8 +44,20 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var updateManager: UpdateManager
 
+    @Inject
+    lateinit var appLauncher: AppLauncher
+
+    @Inject
+    lateinit var widgetUpdater: WidgetUpdater
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (savedInstanceState == null) {
+            handleLaunchIntent(intent)
+        }
+        lifecycleScope.launch {
+            widgetUpdater.refresh()
+        }
         enableEdgeToEdge()
         setContent {
             val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -75,7 +93,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        true -> WhenYahApp()
+                        true -> WhenYahApp(launcher = appLauncher)
                     }
 
                     pendingUpdate?.let { update ->
@@ -109,6 +127,36 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleLaunchIntent(intent)
+    }
+
+    private fun handleLaunchIntent(intent: Intent?) {
+        val request = LaunchRequestParser.parse(
+            itemId = intent?.getStringExtra(LaunchContract.EXTRA_ITEM_ID),
+            depositAmountIdr = intent?.let {
+                if (it.hasExtra(LaunchContract.EXTRA_DEPOSIT_IDR)) {
+                    it.getLongExtra(LaunchContract.EXTRA_DEPOSIT_IDR, 0L)
+                } else {
+                    null
+                }
+            },
+            openAddItem = intent?.getBooleanExtra(LaunchContract.EXTRA_OPEN_ADD_ITEM, false) == true,
+        )
+
+        when (request) {
+            is LaunchRequest.OpenItem -> appLauncher.openItem(
+                itemId = request.itemId,
+                depositAmountIdr = request.depositAmountIdr,
+            )
+
+            LaunchRequest.AddItem -> appLauncher.addItem()
+            null -> Unit
         }
     }
 }

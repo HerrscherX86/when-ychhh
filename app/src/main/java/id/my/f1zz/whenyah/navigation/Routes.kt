@@ -4,7 +4,7 @@ import java.util.UUID
 
 object Routes {
     const val COLLECTION_DETAIL = "collection/{collectionId}"
-    const val ITEM_DETAIL = "item/{itemId}"
+    const val ITEM_DETAIL = "item/{itemId}?depositAmount={depositAmount}"
     const val ITEM_HISTORY = "item/{itemId}/history"
     const val ITEM_PLAN = "item/{itemId}/plan"
     const val ITEM_ADD = "add-item?collectionId={collectionId}"
@@ -16,7 +16,12 @@ object Routes {
 
     fun collectionDetail(collectionId: UUID): String = "collection/$collectionId"
 
-    fun itemDetail(itemId: UUID): String = "item/$itemId"
+    fun itemDetail(itemId: UUID, depositAmountIdr: Long? = null): String =
+        if (depositAmountIdr == null || depositAmountIdr <= 0) {
+            "item/$itemId"
+        } else {
+            "item/$itemId?depositAmount=$depositAmountIdr"
+        }
 
     fun itemHistory(itemId: UUID): String = "item/$itemId/history"
 

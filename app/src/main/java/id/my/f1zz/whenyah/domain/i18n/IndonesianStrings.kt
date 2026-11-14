@@ -312,6 +312,26 @@ object IndonesianStrings : AppStrings {
     override val notificationChannelSummaries = "Ringkasan progress"
     override val notificationChannelSummariesDescription = "Ringkasan progress tabungan berkala"
     override val summaryNotificationTitle = "Progress tabungan"
+    override val notificationActionAddSavings = "Tambah tabungan"
+
+    override val widgetSectionTitle = "Widget layar utama"
+    override val widgetSectionDescription =
+        "Pilih gaya widget buat ditambahin ke layar utama."
+    override val widgetAddAction = "Tambah widget"
+    override val widgetAddedMessage = "Widget-nya udah ditambahin ke layar utama."
+    override val widgetNotSupportedMessage =
+        "Launcher ini gak bisa nambahin widget langsung. Coba lewat menu widget di layar utama, ya."
+    override val widgetOverview = "Ringkasan"
+    override val widgetClosestGoal = "Target terdekat"
+    override val widgetReadyToBuy = "Siap dibeli"
+    override val widgetNothingReady = "Belum ada yang siap dibeli"
+
+    override fun widgetSummary(active: Int, funded: Int): String =
+        "$active aktif · $funded tercapai"
+
+    override fun widgetReadyCount(count: Int): String = "$count siap dibeli"
+
+    override fun widgetMore(count: Int): String = "+$count lagi"
 
     override val couldNotRecordTransaction = "Gagal nyatet transaksinya"
     override val withdrawalExceeds = "Yang mau ditarik lebih gede dari tabungan yang ada"

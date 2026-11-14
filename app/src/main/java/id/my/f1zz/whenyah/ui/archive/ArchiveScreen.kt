@@ -13,8 +13,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +28,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import id.my.f1zz.whenyah.ui.components.AdaptiveContent
 import id.my.f1zz.whenyah.ui.components.EmptyState
 import id.my.f1zz.whenyah.ui.components.ItemImage
 import id.my.f1zz.whenyah.ui.components.ScreenPhase
@@ -50,14 +52,15 @@ fun ArchiveScreen(
         else -> ScreenPhase.Content
     }
 
-    Crossfade(
-        targetState = phase,
-        animationSpec = tween(
-            durationMillis = AppMotion.MediumMillis,
-            easing = AppMotion.StandardEasing,
-        ),
-        label = "archivePhase",
-    ) { targetPhase ->
+    AdaptiveContent(modifier = modifier, maxWidth = 1200.dp) {
+        Crossfade(
+            targetState = phase,
+            animationSpec = tween(
+                durationMillis = AppMotion.MediumMillis,
+                easing = AppMotion.StandardEasing,
+            ),
+            label = "archivePhase",
+        ) { targetPhase ->
         when (targetPhase) {
             ScreenPhase.Loading -> {
                 Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -75,10 +78,12 @@ fun ArchiveScreen(
             }
 
             ScreenPhase.Content -> {
-                LazyColumn(
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 320.dp),
                     modifier = modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     items(items = state.items, key = { it.item.id }) { entry ->
                         Card(
@@ -142,5 +147,6 @@ fun ArchiveScreen(
                 }
             }
         }
+    }
     }
 }

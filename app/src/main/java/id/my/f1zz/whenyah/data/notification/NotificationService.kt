@@ -14,6 +14,7 @@ import androidx.core.content.ContextCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import id.my.f1zz.whenyah.MainActivity
 import id.my.f1zz.whenyah.R
+import id.my.f1zz.whenyah.data.navigation.LaunchContract
 import id.my.f1zz.whenyah.domain.format.formatIdr
 import id.my.f1zz.whenyah.domain.i18n.LanguageStore
 import id.my.f1zz.whenyah.domain.model.PlanFrequency
@@ -72,6 +73,7 @@ class NotificationService @Inject constructor(
     }
 
     fun showPlanReminder(
+        itemId: UUID,
         planId: UUID,
         itemName: String,
         contributionIdr: Long,
@@ -86,6 +88,8 @@ class NotificationService @Inject constructor(
                 formatIdr(contributionIdr),
                 frequency,
             ),
+            itemId = itemId,
+            depositAmountIdr = contributionIdr.takeIf { it > 0 },
         )
     }
 
@@ -104,6 +108,7 @@ class NotificationService @Inject constructor(
                 formatIdr(savedIdr),
                 formatIdr(targetIdr),
             ),
+            itemId = itemId,
         )
     }
 
@@ -143,31 +148,57 @@ class NotificationService @Inject constructor(
         notificationId: Int,
         title: String,
         message: String,
+        itemId: UUID? = null,
+        depositAmountIdr: Long? = null,
     ) {
         ensureChannels()
         if (!canPostNotifications()) return
 
-        val notification = NotificationCompat.Builder(context, channelId)
+        val strings = languageStore.strings()
+        val builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
-            .setContentIntent(contentIntent())
+            .setContentIntent(contentIntent(itemId, null, notificationId))
             .setAutoCancel(true)
-            .build()
+
+        if (itemId != null && depositAmountIdr != null) {
+            builder.addAction(
+                R.drawable.ic_notification,
+                strings.notificationActionAddSavings,
+                contentIntent(
+                    itemId = itemId,
+                    depositAmountIdr = depositAmountIdr,
+                    requestCode = notificationId + ACTION_REQUEST_OFFSET,
+                ),
+            )
+        }
 
         runCatching {
-            NotificationManagerCompat.from(context).notify(notificationId, notification)
+            NotificationManagerCompat.from(context).notify(notificationId, builder.build())
         }
     }
 
-    private fun contentIntent(): PendingIntent {
+    private fun contentIntent(
+        itemId: UUID?,
+        depositAmountIdr: Long?,
+        requestCode: Int,
+    ): PendingIntent {
         val intent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                Intent.FLAG_ACTIVITY_SINGLE_TOP
+            if (itemId != null) {
+                putExtra(LaunchContract.EXTRA_ITEM_ID, itemId.toString())
+            }
+            if (depositAmountIdr != null) {
+                putExtra(LaunchContract.EXTRA_DEPOSIT_IDR, depositAmountIdr)
+            }
         }
         return PendingIntent.getActivity(
             context,
-            0,
+            requestCode,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
@@ -180,5 +211,6 @@ class NotificationService @Inject constructor(
         const val GOAL_NOTIFICATION_BASE = 100_000
         const val SUMMARY_NOTIFICATION_ID = 5001
         const val TEST_NOTIFICATION_ID = 5002
+        const val ACTION_REQUEST_OFFSET = 1_000_000
     }
 }

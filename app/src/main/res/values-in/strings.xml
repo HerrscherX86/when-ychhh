@@ -1,0 +1,8 @@
+<resources>
+    <string name="whenyah_widget_name">Tabungan When Yah</string>
+    <string name="whenyah_widget_description">Total kekumpul, progress keseluruhan, dan target aktif.</string>
+    <string name="whenyah_widget_closest_name">When Yah target terdekat</string>
+    <string name="whenyah_widget_closest_description">Progres dan sisa tabungan buat target terdekatmu.</string>
+    <string name="whenyah_widget_ready_name">When Yah siap dibeli</string>
+    <string name="whenyah_widget_ready_description">Barang yang tabungannya udah nyampe target.</string>
+</resources>

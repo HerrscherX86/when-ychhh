@@ -8,6 +8,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -35,6 +36,36 @@ fun rememberFabVisibility(listState: LazyListState): State<Boolean> {
 
         snapshotFlow {
             listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset
+        }
+            .distinctUntilChanged()
+            .collect { (index, offset) ->
+                val scrollingDown = index > previousIndex ||
+                    (index == previousIndex && offset > previousOffset)
+
+                if (scrollingDown && (index > 0 || offset > 80)) {
+                    visible.value = false
+                } else if (!scrollingDown) {
+                    visible.value = true
+                }
+
+                previousIndex = index
+                previousOffset = offset
+            }
+    }
+
+    return visible
+}
+
+@Composable
+fun rememberFabVisibility(gridState: LazyGridState): State<Boolean> {
+    val visible = remember { mutableStateOf(true) }
+
+    LaunchedEffect(gridState) {
+        var previousIndex = gridState.firstVisibleItemIndex
+        var previousOffset = gridState.firstVisibleItemScrollOffset
+
+        snapshotFlow {
+            gridState.firstVisibleItemIndex to gridState.firstVisibleItemScrollOffset
         }
             .distinctUntilChanged()
             .collect { (index, offset) ->

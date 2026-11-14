@@ -6,6 +6,7 @@ import id.my.f1zz.whenyah.data.local.dao.SavingsEventDao
 import id.my.f1zz.whenyah.data.local.dao.WishlistItemDao
 import id.my.f1zz.whenyah.data.local.entity.SavingsEventEntity
 import id.my.f1zz.whenyah.data.notification.GoalNotifier
+import id.my.f1zz.whenyah.data.widget.WidgetUpdater
 import id.my.f1zz.whenyah.domain.model.ItemStatus
 import id.my.f1zz.whenyah.domain.model.SavingsEventType
 import id.my.f1zz.whenyah.domain.savings.SavingsCalculator
@@ -21,6 +22,7 @@ class SavingsRepository @Inject constructor(
     private val itemDao: WishlistItemDao,
     private val database: WhenYahDatabase,
     private val goalNotifier: GoalNotifier,
+    private val widgetUpdater: WidgetUpdater,
 ) {
     fun observeEvents(itemId: UUID): Flow<List<SavingsEventEntity>> =
         savingsEventDao.observeByItem(itemId)
@@ -82,6 +84,8 @@ class SavingsRepository @Inject constructor(
                 )
             }
         }
+
+        widgetUpdater.refresh()
     }
 
     suspend fun recordWithdrawal(
@@ -110,6 +114,8 @@ class SavingsRepository @Inject constructor(
                 )
             )
         }
+
+        widgetUpdater.refresh()
     }
 
     private fun normalizeNote(note: String?): String? =

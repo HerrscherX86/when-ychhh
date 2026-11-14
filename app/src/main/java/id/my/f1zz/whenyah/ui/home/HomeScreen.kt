@@ -74,6 +74,7 @@ import id.my.f1zz.whenyah.domain.model.SavingsEventType
 import id.my.f1zz.whenyah.domain.wishlist.GoalFilter
 import id.my.f1zz.whenyah.domain.wishlist.ItemSortOrder
 import id.my.f1zz.whenyah.domain.wishlist.PlanFilter
+import id.my.f1zz.whenyah.ui.components.AdaptiveContent
 import id.my.f1zz.whenyah.ui.components.EmptyState
 import id.my.f1zz.whenyah.ui.components.ItemCard
 import id.my.f1zz.whenyah.ui.components.ScrollAwareAddFab
@@ -105,6 +106,7 @@ fun HomeScreen(
     var showFilters by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
+        AdaptiveContent(maxWidth = 960.dp) {
         if (state.isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
@@ -295,6 +297,8 @@ fun HomeScreen(
                     }
                 }
             }
+        }
+
         }
 
         ScrollAwareAddFab(

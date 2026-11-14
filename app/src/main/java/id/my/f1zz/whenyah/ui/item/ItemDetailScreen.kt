@@ -51,6 +51,7 @@ import id.my.f1zz.whenyah.data.local.entity.SavingsPlanEntity
 import id.my.f1zz.whenyah.domain.plan.SavingsPlanProjection
 import id.my.f1zz.whenyah.domain.savings.TransactionType
 import id.my.f1zz.whenyah.domain.validation.ItemValidation
+import id.my.f1zz.whenyah.ui.components.AdaptiveContent
 import id.my.f1zz.whenyah.ui.components.ConfirmDeleteDialog
 import id.my.f1zz.whenyah.ui.components.EmptyState
 import id.my.f1zz.whenyah.ui.components.ItemImage
@@ -121,30 +122,31 @@ fun ItemDetailScreen(
         transactionForm.error?.let(feedback::error)
     }
 
-    when {
-        state.isLoading -> {
-            Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+    AdaptiveContent(modifier = modifier, maxWidth = 720.dp) {
+        when {
+            state.isLoading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
             }
-        }
 
-        item == null -> {
-            Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                EmptyState(
-                    title = strings.itemNotFound,
-                    message = strings.itemMayBeDeleted,
-                )
+            item == null -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    EmptyState(
+                        title = strings.itemNotFound,
+                        message = strings.itemMayBeDeleted,
+                    )
+                }
             }
-        }
 
-        else -> {
-            Column(
-                modifier = modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
+            else -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
                 ItemImage(
                     relativePath = item.imageRelativePath,
                     contentDescription = item.name,
@@ -291,6 +293,7 @@ fun ItemDetailScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
+    }
     }
 
     if (showDeleteDialog) {

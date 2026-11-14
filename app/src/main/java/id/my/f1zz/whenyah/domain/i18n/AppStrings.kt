@@ -310,6 +310,20 @@ interface AppStrings {
     val notificationChannelSummaries: String
     val notificationChannelSummariesDescription: String
     val summaryNotificationTitle: String
+    val notificationActionAddSavings: String
+
+    val widgetSectionTitle: String
+    val widgetSectionDescription: String
+    val widgetAddAction: String
+    val widgetAddedMessage: String
+    val widgetNotSupportedMessage: String
+    val widgetOverview: String
+    val widgetClosestGoal: String
+    val widgetReadyToBuy: String
+    val widgetNothingReady: String
+    fun widgetSummary(active: Int, funded: Int): String
+    fun widgetReadyCount(count: Int): String
+    fun widgetMore(count: Int): String
 
     val couldNotRecordTransaction: String
     val withdrawalExceeds: String
